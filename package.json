@@ -1,0 +1,23 @@
+{
+  "name": "boxyforms",
+  "version": "1.0.0",
+  "main": "index.js",
+  "repository": "https://github.com/martindlarsson/boxyformsapp.git",
+  "author": "Martin Larsson <martin.d.andersson@gmail.com>",
+  "license": "MIT",
+  "scripts": {
+    "build": "webpack",
+    "watch": "webpack --watch",
+    "dev": "webpack-dev-server --port 3000"
+  },
+  "dependencies": {
+    "css-loader": "^0.26.2",
+    "elm-webpack-loader": "^4.2.0",
+    "file-loader": "^0.10.1",
+    "style-loader": "^0.13.2",
+    "url-loader": "^0.5.8",
+    "webpack": "^2.2.1",
+    "webpack-dev-middleware": "^1.10.1",
+    "webpack-dev-server": "^2.4.1"
+  }
+}
