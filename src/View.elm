@@ -1,9 +1,10 @@
 module View exposing(view)
 
-import Html exposing (Html, div, text, program, h1)
+import Html exposing (Html, div, text, h1)
 import Html.Attributes exposing(style)
 import Models exposing(Model)
 import Messages exposing(Msg(..))
+import Event.EventListView as EventListView exposing(..)
 
 import Material
 import Material.Layout as Layout
@@ -31,6 +32,7 @@ view model =
                 [ div
                     [ style [ ( "padding", "1rem" ) ] ]
                     [ body model
+                    , EventListView.eventListView model
                     -- , Snackbar.view model.snackbar |> App.map Snackbar
                     ]
                 ]

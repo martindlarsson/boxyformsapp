@@ -7,4 +7,5 @@ import Material
 
 type Msg
     = Mdl (Material.Msg Msg)
+    | EventClicked
     | NoOp
