@@ -18,15 +18,15 @@ import Material.Scheme
 
 view : Model -> Html Msg
 view model =
-    Material.Scheme.topWithScheme Color.BlueGrey Color.LightBlue <|
+    Material.Scheme.topWithScheme Color.Lime Color.LightBlue <|
         Layout.render Mdl
             model.mdl
             [ Layout.fixedHeader
             , Layout.fixedDrawer
             ]
             { header = header model
-            -- , drawer = drawer model
-            -- , tabs = ( [], [] )
+            , drawer = []
+            , tabs = ( [], [] )
             , main =
                 [ div
                     [ style [ ( "padding", "1rem" ) ] ]
@@ -40,10 +40,18 @@ body : Model -> Html Msg
 body model =
     div [] [ text "BODYYY" ]
 
+
+
+
 header : Model -> List (Html Msg)
 header model =
-    [ Layout.Contents
-        []
-        [ Layout.title [] [ text "BoxyForms" ]
-        ]
-    ]
+    [ h1 [ style [ ("text-align","center") ] ] [ text "BoxyForms" ] ]
+
+
+-- header : Model -> Html Msg
+-- header model =
+--     [ Layout.Contents
+--         []
+--         [ Layout.title [] [ text "BoxyForms" ]
+--         ]
+--     ]
