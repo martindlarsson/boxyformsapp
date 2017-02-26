@@ -1,17 +1,16 @@
-module View exposing(view)
+module View exposing (view)
 
 import Html exposing (Html, div, text, h1)
-import Html.Attributes exposing(style)
-import Models exposing(Model)
-import Messages exposing(Msg(..))
-import Event.EventListView as EventListView exposing(..)
-
+import Html.Attributes exposing (style)
+import Models exposing (Model)
+import Messages exposing (Msg(..))
+import Event.EventListView as EventListView exposing (..)
 import Material
 import Material.Layout as Layout
 import Material.Color as Color
 import Material.Scheme
--- import Material.Button as Button
--- import Material.Options as Options exposing (css)
+import Material.Footer as Footer exposing (mini)
+import Material.Options as Options exposing (css)
 
 
 -- VIEW
@@ -19,10 +18,11 @@ import Material.Scheme
 
 view : Model -> Html Msg
 view model =
-    Material.Scheme.topWithScheme Color.Lime Color.LightBlue <|
+    Material.Scheme.topWithScheme Color.Lime Color.DeepOrange <|
         Layout.render Mdl
             model.mdl
             [ Layout.fixedHeader
+            , Layout.scrolling
             , Layout.fixedDrawer
             ]
             { header = header model
@@ -31,29 +31,43 @@ view model =
             , main =
                 [ div
                     [ style [ ( "padding", "1rem" ) ] ]
-                    [ body model
-                    , EventListView.eventListView model
-                    -- , Snackbar.view model.snackbar |> App.map Snackbar
-                    ]
+                    [ EventListView.eventListView model ]
+                , footer model
                 ]
             }
-
-body : Model -> Html Msg
-body model =
-    div [] [ text "BODYYY" ]
-
-
 
 
 header : Model -> List (Html Msg)
 header model =
-    [ h1 [ style [ ("text-align","center") ] ] [ text "BoxyForms" ] ]
+    [ Layout.row [] [ Layout.title [] [ text "BoxyForms" ] ] ]
 
 
--- header : Model -> Html Msg
--- header model =
---     [ Layout.Contents
---         []
---         [ Layout.title [] [ text "BoxyForms" ]
---         ]
---     ]
+
+-- Footer
+
+
+footer : Model -> Html Msg
+footer model =
+    Footer.mini
+        [ css "position" "relative"
+        , css "width" "100%"
+        , css "height" "80px"
+        , css "overflow" "hidden"
+        ]
+        { left =
+            Footer.left []
+                [ Footer.logo [] [ Footer.html <| text "Mini Footer Example" ]
+                , Footer.links []
+                    [ Footer.linkItem [ Footer.href "#footers" ] [ Footer.html <| text "Link 1" ]
+                    , Footer.linkItem [ Footer.href "#footers" ] [ Footer.html <| text "Link 2" ]
+                    , Footer.linkItem [ Footer.href "#footers" ] [ Footer.html <| text "Link 3" ]
+                    ]
+                ]
+        , right =
+            Footer.right []
+                [ Footer.logo [] [ Footer.html <| text "Mini Footer Right Section" ]
+                , Footer.socialButton [ Options.css "margin-right" "6px" ] []
+                , Footer.socialButton [ Options.css "margin-right" "6px" ] []
+                , Footer.socialButton [ Options.css "margin-right" "0px" ] []
+                ]
+        }

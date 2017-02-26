@@ -1,18 +1,19 @@
 module Models exposing(Model, initialModel)
 
 import Material
+import Event.Models exposing(Event)
 
 -- MODEL
 
 
 type alias Model =
-    { str : String
+    { events : List Event
     , mdl : Material.Model -- Boilerplate: model store for any and all Mdl components you use.
     }
 
 initialModel : Model
 initialModel =
-    { str = "Hello Martinnnn"
+    { events = []
     , mdl = Material.model
     }
 

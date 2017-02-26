@@ -10,6 +10,12 @@ import Material
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
+        GotEventsMsg eventsList ->
+            let
+                _ = Debug.log "GotEventsMsg" eventsList
+            in
+                ( { model | events = eventsList }, Cmd.none )
+
         EventClicked ->
             ( model, Cmd.none )
 

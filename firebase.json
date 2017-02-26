@@ -1,0 +1,14 @@
+{
+  "database": {
+    "rules": "firebase.dbrules.json"
+  },
+  "hosting": {
+    "public": "dist",
+    "rewrites": [
+      {
+        "source": "**",
+        "destination": "/index.html"
+      }
+    ]
+  }
+}
