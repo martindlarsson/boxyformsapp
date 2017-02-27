@@ -3,8 +3,11 @@
     "dateClose" : "20170512T120000",
     "description" : "Värmlands  sdsd tuffaste multisporttävling",
     "eventId" : 1,
-    "eventName" : "Utmaningen 2017",
-    "formId" : 1,
+    "eventName" : "Anmälan till Utmaningen 2017",
+    "eventForms" : [{
+      "formId" : 1,
+      "formName" : "Utmaningen 2017"
+    } ],
     "organizer" : "Karlstad Multisport",
     "organizerId" : 1,
     "public" : true,
@@ -14,7 +17,10 @@
     "description" : "Värmlands sdsd tuffaste multisporttävling",
     "eventId" : 1,
     "eventName" : "Wermalnd AR 2017",
-    "formId" : 2,
+    "eventForms" : [{
+      "formId" : 2,
+      "formName" : "Anmälan till Wermalnd AR 2017"
+    } ],
     "organizer" : "Karlstad Multisport",
     "organizerId" : 1,
     "public" : true,

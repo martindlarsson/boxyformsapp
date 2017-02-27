@@ -1,11 +1,16 @@
-module Event.Models exposing(Event)
+module Event.Models exposing(Event, EventForm)
 
 type alias Event =
     { eventId : Int
     , eventName : String
-    , formId : Int -- TODO, list of forms
+    , eventForms : (List EventForm)
     , organizer : String
     , organizerId : Int
     , public : Bool
     , webLink : String
+    }
+
+type alias EventForm =
+    { formId : Int
+    , formName : String
     }

@@ -16,8 +16,11 @@ update msg model =
             in
                 ( { model | events = eventsList }, Cmd.none )
 
-        EventClicked ->
-            ( model, Cmd.none )
+        EventFormClicked eventFormId ->
+            let
+                _ = Debug.log "EventFormClicked" eventFormId
+            in
+                ( model, Cmd.none )
 
         -- Boilerplate: Mdl action handler.
         Mdl subMsg ->

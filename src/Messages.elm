@@ -8,6 +8,6 @@ import Event.Models exposing(Event)
 
 type Msg
     = Mdl (Material.Msg Msg)
-    | EventClicked
+    | EventFormClicked Int
     | GotEventsMsg (List Event)
     | NoOp
