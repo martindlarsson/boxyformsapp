@@ -1,8 +1,13 @@
-module FormDecoder exposing (..)
+module Form.FormDecoder exposing(..)
 
-decodeForm : Json.Decode.Value -> Result String (List Form)
+import Form.Models exposing(..)
+import Json.Decode exposing (int, string, float, nullable, Decoder, list, andThen)
+import Json.Decode.Pipeline exposing (decode, required, optional, hardcoded)
+import List exposing(head)
+
+decodeForm : List Json.Decode.Value -> Result String Form
 decodeForm modelJson =
-    Json.Decode.decodeValue formDecoder modelJson
+    Json.Decode.decodeValue formDecoder ( head modelJson )
 
 formDecoder : Decoder Form
 formDecoder =
@@ -14,6 +19,13 @@ formDecoder =
         |> required "formName" string
         |> required "formSteps" (list formStepDecoder)
 
+formStepDecoder : Decoder FormStep
+formStepDecoder =
+    decode FormStep
+        |> required "stepTitle" string
+        |> required "stepIndex" int
+        |> required "questions" (list questionDecoder)
+
 questionDecoder : Decoder Question
 questionDecoder =
     decode Question
@@ -21,7 +33,18 @@ questionDecoder =
         |> required "questionText" string
         |> required "questionType" (string |> andThen stringToQuestionType)
         |> required "questionIndex" int
-        |> optional "choices" (list choiceDecoder) []
+        |> required "choices" (nullable (list choiceDecoder))
+
+
+stringToQuestionType : String -> QuestionType
+stringToQuestionType typeString =
+    -- typeString
+        case typeString of
+        "textType" -> TextType
+        "textType_email" -> TextType_email
+        "choiceType" -> ChoiceType
+        "infoType" -> InfoType
+        
 
 choiceDecoder : Decoder Choice
 choiceDecoder =

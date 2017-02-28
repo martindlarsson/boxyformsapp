@@ -27,8 +27,8 @@ type alias Question =
     { questionId : QuestionId
     , questionText : String
     , questionType : QuestionType
-    , questionIndex : Index
-    , choices : List Choice
+    , questionIndex : Int
+    , choices : Maybe (List Choice)
     }
 
 type QuestionType = TextType | TextType_email | ChoiceType | InfoType

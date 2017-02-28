@@ -8,6 +8,7 @@ import View exposing(view)
 import Ports exposing(..)
 import Navigation exposing (Location)
 import Routing
+import Form.FormDecoder exposing(formDecoder)
 
 -- SUBSCRIPTIONS
 
@@ -16,6 +17,7 @@ subscriptions : Model -> Sub Msg
 subscriptions model =
     Sub.batch
         [ gotEventList GotEventsMsg
+        , gotForm (GotFormMsg << decodeValue (list formDecoder))
         ]
 
 

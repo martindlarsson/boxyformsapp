@@ -23,6 +23,13 @@ update msg model =
             in
                 ( model, Cmd.none )
 
+        GotFormMsg formResult ->
+            case formResult of
+                Ok form ->
+                    ( { model | form = Just form }, Cmd.none )
+                Err errorMsg ->
+                    ( model , Cmd.none )
+
         OnLocationChange location ->
             let
                 newRoute =

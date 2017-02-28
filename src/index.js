@@ -22,3 +22,13 @@ app.ports.getEvents.subscribe(function () {
         app.ports.gotEventList.send(snapshot.val());
     })
 });
+
+// Get events from Firebase
+app.ports.getForm.subscribe(function (formId) {
+    // console.log("using ports..");
+    var eventsRef = database.ref('forms/');
+    eventsRef.orderByChild("formId").equalTo(formId).once('value').then(function (snapshot) {
+        // console.log("Now somethin came from Firebase!");
+        app.ports.gotForm.send(snapshot.val());
+    })
+});
