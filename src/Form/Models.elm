@@ -1,4 +1,12 @@
+module Form.Models exposing(..)
 
+type alias Index = Int
+
+type alias FormId = Int
+
+type alias QuestionId = Int
+
+type alias EventId = Int
 
 type alias Form =
     { eventId : EventId
@@ -9,9 +17,24 @@ type alias Form =
     , formSteps : List FormStep
     }
 
+type alias FormStep =
+    { stepTitle : String
+    , stepIndex : Index
+    , questions : List Question
+    }
+
 type alias Question =
-    { questionText : String
+    { questionId : QuestionId
+    , questionText : String
     , questionType : QuestionType
     , questionIndex : Index
     , choices : List Choice
+    }
+
+type QuestionType = TextType | TextType_email | ChoiceType | InfoType
+
+type alias Choice =
+    { choiceFee : Int
+    , choiceIndex : Index
+    , choiceText : String
     }

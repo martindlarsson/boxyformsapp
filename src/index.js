@@ -15,10 +15,10 @@ var app = Elm.Main.embed(mountNode);
 
 // Get events from Firebase
 app.ports.getEvents.subscribe(function () {
-    console.log("using ports..");
+    // console.log("using ports..");
     var eventsRef = database.ref('events/');
     eventsRef.once('value').then(function (snapshot) {
-        console.log("Now somethin came from Firebase!");
+        // console.log("Now somethin came from Firebase!");
         app.ports.gotEventList.send(snapshot.val());
     })
 });

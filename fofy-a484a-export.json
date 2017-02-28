@@ -1,4 +1,7 @@
-{
+{ "counters" : {
+    "questionIdCounter" : 100,
+    "formIdCounter" : 100,
+    "eventIdCounter" : 100 },
   "events" : [ {
     "dateClose" : "20170512T120000",
     "description" : "Värmlands  sdsd tuffaste multisporttävling",
@@ -33,10 +36,12 @@
     "formName" : "Anmälan till Utmaningen 2017",
     "formSteps" : [ {
       "questions" : [ {
+        "questionId" : 63463,
         "questionIndex" : 1,
         "questionText" : "Namn",
         "questionType" : "TextType"
       }, {
+        "questionId" : 35,
         "questionIndex" : 2,
         "questionText" : "E-post",
         "questionType" : "TextType_email"
@@ -45,6 +50,7 @@
       "stepTitle" : "Kontaktinformation"
     }, {
       "questions" : [ {
+        "questionId" : 5533,
         "questionIndex" : 1,
         "questionText" : "Lagnamn",
         "questionType" : "TextType"
@@ -62,6 +68,7 @@
           "choiceIndex" : 3,
           "choiceText" : "Mix"
         } ],
+        "questionId" : 344,
         "questionIndex" : 2,
         "questionText" : "Klass",
         "questionType" : "ChoiceType"
@@ -75,6 +82,7 @@
           "choiceIndex" : 2,
           "choiceText" : "Kort"
         } ],
+        "questionId" : 33,
         "questionIndex" : 3,
         "questionText" : "Bana",
         "questionType" : "ChoiceType"
@@ -90,10 +98,12 @@
     "formName" : "Anmälan till Wermalnd AR 2017",
     "formSteps" : [ {
       "questions" : [ {
+        "questionId" : 1234,
         "questionIndex" : 1,
         "questionText" : "Namn",
         "questionType" : "TextType"
       }, {
+        "questionId" : 88567,
         "questionIndex" : 2,
         "questionText" : "E-post",
         "questionType" : "TextType_email"
@@ -102,6 +112,7 @@
       "stepTitle" : "Kontaktinformation"
     }, {
       "questions" : [ {
+        "questionId" : 36355,
         "questionIndex" : 1,
         "questionText" : "Lagnamn",
         "questionType" : "TextType"
@@ -119,6 +130,7 @@
           "choiceIndex" : 3,
           "choiceText" : "Mix"
         } ],
+        "questionId" : 5523,
         "questionIndex" : 2,
         "questionText" : "Klass",
         "questionType" : "ChoiceType"
@@ -132,6 +144,7 @@
           "choiceIndex" : 2,
           "choiceText" : "Kort"
         } ],
+        "questionId" : 234235,
         "questionIndex" : 3,
         "questionText" : "Bana",
         "questionType" : "ChoiceType"

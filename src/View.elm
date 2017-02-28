@@ -2,7 +2,7 @@ module View exposing (view)
 
 import Html exposing (Html, div, text, h1)
 import Html.Attributes exposing (style)
-import Models exposing (Model)
+import Models exposing (Model, Route(..))
 import Messages exposing (Msg(..))
 import Event.EventListView as EventListView exposing (..)
 import Material
@@ -31,7 +31,7 @@ view model =
             , main =
                 [ div
                     [ style [ ( "padding", "1rem" ) ] ]
-                    [ EventListView.eventListView model ]
+                    (body model) --[ EventListView.eventListView model ]
                 , footer model
                 ]
             }
@@ -41,6 +41,18 @@ header : Model -> List (Html Msg)
 header model =
     [ Layout.row [] [ Layout.title [] [ text "BoxyForms" ] ] ]
 
+
+body : Model -> List (Html Msg)
+body model =
+    case model.route of
+        EventListRoute ->
+            [ EventListView.eventListView model ]
+
+        FormRoute formId ->
+            [ text ( "formId: " ++ ( toString formId) ) ]
+
+        NotFoundRoute ->
+            [ notFoundView ]
 
 
 -- Footer
@@ -71,3 +83,10 @@ footer model =
                 , Footer.socialButton [ Options.css "margin-right" "0px" ] []
                 ]
         }
+
+
+notFoundView : Html msg
+notFoundView =
+    div []
+        [ text "Not found"
+        ]

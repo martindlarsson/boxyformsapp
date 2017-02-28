@@ -11,6 +11,7 @@ import Material.Card as Card
 import Material.Options as Options exposing (css, onMouseEnter, onMouseLeave, onClick)
 import Material.Elevation as Elevation
 import Material.Button as Button --exposing (..)
+import Routing exposing(formPath)
 
 
 eventListView : Model -> Html Msg
@@ -41,7 +42,7 @@ formButton eventForm mdl =
         [ Button.raised
         , Button.colored
         , Button.ripple
-        , Options.onClick (EventFormClicked eventForm.formId)
+        , Button.link ( formPath eventForm.formId ) --Options.onClick (EventFormClicked eventForm.formId)
         ]
         [ text eventForm.formName]
 

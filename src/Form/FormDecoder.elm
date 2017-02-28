@@ -17,6 +17,7 @@ formDecoder =
 questionDecoder : Decoder Question
 questionDecoder =
     decode Question
+        |> required "questionId" int -- Nödvändigt?
         |> required "questionText" string
         |> required "questionType" (string |> andThen stringToQuestionType)
         |> required "questionIndex" int
@@ -24,7 +25,7 @@ questionDecoder =
 
 choiceDecoder : Decoder Choice
 choiceDecoder =
-    decode Choice
+    decode Choice -- choiceId ?
         |> required "choiceFee" int
         |> required "choiceText" string
         |> required "choiceIndex" int
