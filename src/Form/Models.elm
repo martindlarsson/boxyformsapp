@@ -31,7 +31,7 @@ type alias Question =
     , choices : Maybe (List Choice)
     }
 
-type QuestionType = TextType | TextType_email | ChoiceType | InfoType
+type QuestionType = TextType | TextType_email | ChoiceType | InfoType | NoType
 
 type alias Choice =
     { choiceFee : Int

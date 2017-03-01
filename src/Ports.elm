@@ -15,4 +15,5 @@ port gotEventList : ( List Event -> msg) -> Sub msg
 
 port getForm : FormId -> Cmd msg
 
-port gotForm : ( List Json.Decode.Value -> msg ) -> Sub msg
+-- port gotForm : ( List Json.Decode.Value -> msg ) -> Sub msg
+port gotForm : ( Json.Decode.Value -> msg ) -> Sub msg

@@ -1,13 +1,26 @@
 module Form.FormDecoder exposing(..)
 
 import Form.Models exposing(..)
-import Json.Decode exposing (int, string, float, nullable, Decoder, list, andThen)
-import Json.Decode.Pipeline exposing (decode, required, optional, hardcoded)
+import Json.Decode exposing (int, string, nullable, Decoder, list, andThen, succeed)
+import Json.Decode.Pipeline exposing (decode, required, optional)
 import List exposing(head)
 
 decodeForm : List Json.Decode.Value -> Result String Form
 decodeForm modelJson =
-    Json.Decode.decodeValue formDecoder ( head modelJson )
+    let
+        firstFormInList = ( head modelJson )
+    in
+        case firstFormInList of
+            Just firstForm ->
+                Json.Decode.decodeValue formDecoder firstForm
+            
+            Nothing ->
+                Err "No forms in JSON string"
+
+-- decodeForm : Json.Decode.Value -> Result String Form
+-- decodeForm modelJson =
+--     Json.Decode.decodeValue formDecoder modelJson
+
 
 formDecoder : Decoder Form
 formDecoder =
@@ -31,24 +44,24 @@ questionDecoder =
     decode Question
         |> required "questionId" int -- Nödvändigt?
         |> required "questionText" string
-        |> required "questionType" (string |> andThen stringToQuestionType)
+        |> required "questionType" (string |> andThen questionTypeDecoder)
         |> required "questionIndex" int
         |> required "choices" (nullable (list choiceDecoder))
+        
 
-
-stringToQuestionType : String -> QuestionType
-stringToQuestionType typeString =
-    -- typeString
-        case typeString of
-        "textType" -> TextType
-        "textType_email" -> TextType_email
-        "choiceType" -> ChoiceType
-        "infoType" -> InfoType
+questionTypeDecoder : String -> Decoder QuestionType
+questionTypeDecoder typeString =
+    case typeString of
+        "textType" -> Json.Decode.succeed TextType
+        "textType_email" -> Json.Decode.succeed TextType_email
+        "choiceType" -> Json.Decode.succeed ChoiceType
+        "infoType" -> Json.Decode.succeed InfoType
+        _ -> Json.Decode.succeed NoType
         
 
 choiceDecoder : Decoder Choice
 choiceDecoder =
     decode Choice -- choiceId ?
         |> required "choiceFee" int
-        |> required "choiceText" string
         |> required "choiceIndex" int
+        |> required "choiceText" string

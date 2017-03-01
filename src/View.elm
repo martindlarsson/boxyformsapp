@@ -5,7 +5,7 @@ import Html.Attributes exposing (style)
 import Models exposing (Model, Route(..))
 import Messages exposing (Msg(..))
 import Event.EventListView as EventListView exposing (..)
-import Material
+-- import Material
 import Material.Layout as Layout
 import Material.Color as Color
 import Material.Scheme
