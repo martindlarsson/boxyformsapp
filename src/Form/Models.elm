@@ -28,7 +28,7 @@ type alias Question =
     , questionText : String
     , questionType : QuestionType
     , questionIndex : Int
-    , choices : Maybe (List Choice)
+    , choices : List Choice --Maybe (List Choice)
     }
 
 type QuestionType = TextType | TextType_email | ChoiceType | InfoType | NoType

@@ -4,8 +4,10 @@ import Html exposing (Html, div, text, h1)
 import Html.Attributes exposing (style)
 import Models exposing (Model, Route(..))
 import Messages exposing (Msg(..))
+
 import Event.EventListView as EventListView exposing (..)
--- import Material
+import Form.FormView as FormView exposing(formView)
+
 import Material.Layout as Layout
 import Material.Color as Color
 import Material.Scheme
@@ -49,7 +51,7 @@ body model =
             [ EventListView.eventListView model ]
 
         FormRoute formId ->
-            [ text ( "formId: " ++ ( toString formId) ) ]
+           [ FormView.formView model ]  --[ text ( "formId: " ++ ( toString formId) ) ]
 
         NotFoundRoute ->
             [ notFoundView ]

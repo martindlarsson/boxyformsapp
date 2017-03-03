@@ -3,6 +3,7 @@ port module Ports exposing(..)
 import Event.Models exposing(Event)
 import Form.Models exposing(Form, FormId)
 import Json.Decode exposing (Value)
+import Form.FormDecoder exposing(decodeForm)
 
 -- Events
 

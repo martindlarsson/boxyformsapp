@@ -3,23 +3,31 @@ module Form.FormDecoder exposing(..)
 import Form.Models exposing(..)
 import Json.Decode exposing (int, string, nullable, Decoder, list, andThen, succeed)
 import Json.Decode.Pipeline exposing (decode, required, optional)
-import List exposing(head)
 
-decodeForm : List Json.Decode.Value -> Result String Form
-decodeForm modelJson =
-    let
-        firstFormInList = ( head modelJson )
-    in
-        case firstFormInList of
-            Just firstForm ->
-                Json.Decode.decodeValue formDecoder firstForm
-            
-            Nothing ->
-                Err "No forms in JSON string"
-
--- decodeForm : Json.Decode.Value -> Result String Form
+-- decodeForm : List Json.Decode.Value -> Result String Form
 -- decodeForm modelJson =
---     Json.Decode.decodeValue formDecoder modelJson
+--     let
+--         firstFormInList = ( head modelJson )
+--     in
+--         case firstFormInList of
+--             Just firstForm ->
+--                 Json.Decode.decodeValue formDecoder firstForm
+            
+--             Nothing ->
+--                 Err "No forms in JSON string"
+
+-- decodeForm : Json.Decode.Value -> Result String (List Form)
+-- decodeForm modelJson =
+--     Json.Decode.decodeValue (list formDecoder) modelJson
+
+
+decodeForm : Json.Decode.Value -> Result String (List Form)
+decodeForm modelJson =
+    Json.Decode.decodeValue decodeFormList modelJson
+
+decodeFormList : Decoder (List Form)
+decodeFormList =
+    list formDecoder
 
 
 formDecoder : Decoder Form
@@ -46,7 +54,8 @@ questionDecoder =
         |> required "questionText" string
         |> required "questionType" (string |> andThen questionTypeDecoder)
         |> required "questionIndex" int
-        |> required "choices" (nullable (list choiceDecoder))
+        |> optional "choices" (list choiceDecoder) []
+        -- |> required "choices" (nullable (list choiceDecoder))
         
 
 questionTypeDecoder : String -> Decoder QuestionType

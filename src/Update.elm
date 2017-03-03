@@ -1,9 +1,11 @@
 module Update exposing(..)
 
 import Messages exposing(Msg(..))
-import Models exposing(Model)
+import Models exposing(Model, Route(..))
 import Routing exposing(parseLocation)
 import Material
+import Ports exposing(getForm)
+import List exposing(head)
 
 -- UPDATE
 
@@ -21,12 +23,15 @@ update msg model =
             let
                 _ = Debug.log "EventFormClicked" eventFormId
             in
-                ( model, Cmd.none )
+                ( model, getForm eventFormId )
 
         GotFormMsg formResult ->
             case formResult of
-                Ok form ->
-                    ( { model | form = Just form }, Cmd.none )
+                Ok formList ->
+                    let
+                        form = head formList
+                    in
+                        ( { model | form = form }, Cmd.none )
                 Err errorMsg ->
                     ( model , Cmd.none )
 
@@ -37,7 +42,12 @@ update msg model =
                 
                 _ = Debug.log "OnLocationChange" newRoute
             in
-                ( { model | route = newRoute }, Cmd.none )
+                case newRoute of
+                    FormRoute formId ->
+                        ( { model | route = newRoute }, getForm formId )
+                        
+                    _ ->
+                        ( { model | route = newRoute }, Cmd.none )
 
         -- Boilerplate: Mdl action handler.
         Mdl subMsg ->

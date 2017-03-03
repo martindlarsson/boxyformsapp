@@ -13,5 +13,5 @@ type Msg
     | EventFormClicked Int
     | GotEventsMsg (List Event)
     | OnLocationChange Location
-    | GotFormMsg (Result String Form)
+    | GotFormMsg (Result String (List Form))
     | NoOp
