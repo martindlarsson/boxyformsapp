@@ -1,17 +1,14 @@
 module Form.FormView exposing(..)
 
-import Html exposing (Html, div, text)
+import Html exposing (Html, div, text, h1, h2, h3, select, option, label)
+import Html.Attributes exposing(..)
 import Models exposing(Model)
 import Form.Models exposing(..)
 import Messages exposing (Msg(..))
 
 import Material
--- import Material.Color as Color
--- import Material.Card as Card
--- import Material.Options as Options exposing (css)
--- import Material.Elevation as Elevation
--- import Material.Button as Button --exposing (..)
--- import Routing exposing(formPath) 
+import Material.Textfield as Textfield
+import Material.Toggles as Toggles 
 
 formView : Model -> Html Msg
 formView model =
@@ -26,4 +23,75 @@ formView model =
 formStepView : FormStep -> Material.Model -> Html Msg
 formStepView formStep mdl =
     div []
-    [ text formStep.stepTitle ]
+    -- formStepHeader
+    -- List.map qustions
+    ([ h3 [] [ text formStep.stepTitle ] ] ++
+    List.map (\question -> div [] [ (questionView question mdl) ]) formStep.questions)
+    -- formStepButtons
+
+questionView : Question ->  Material.Model -> Html Msg
+questionView question mdl =
+    let
+        questionText =
+            text question.questionText
+
+        questionControl =
+            case question.questionType of
+                TextType -> (qTextView question mdl)
+                TextType_email -> (qTextEmailView question mdl)
+                ChoiceType -> qChoiceView question mdl --text ("text: " ++ question.questionText)
+                InfoType -> text ("text: " ++ question.questionText)
+                NoType -> text "Unknown question type"
+    in
+        div
+            []
+            [ div [] [ questionText ]
+            , questionControl
+            ]
+        
+
+qTextView : Question -> Material.Model -> Html Msg
+qTextView question mdl =
+    Textfield.render Mdl [ question.questionIndex ] mdl
+        [ Textfield.label question.questionText
+        , Textfield.floatingLabel
+        , Textfield.text_
+        ]
+        []
+        
+
+qTextEmailView : Question -> Material.Model -> Html Msg
+qTextEmailView question mdl =
+    Textfield.render Mdl [ question.questionIndex ] mdl
+        [ Textfield.label question.questionText
+        , Textfield.floatingLabel
+        , Textfield.email
+        ]
+        []
+
+
+qInfoView : Question -> Material.Model -> Html Msg
+qInfoView question mdl =
+    text question.questionText
+
+
+qChoiceView : Question -> Material.Model -> Html Msg
+qChoiceView question mdl =
+    let
+        choices = List.map (\choice -> qOptionView choice question.questionText mdl) question.choices
+    in
+        div
+            []
+            choices
+        
+
+qOptionView : Choice -> String -> Material.Model -> Html Msg
+qOptionView choice groupName mdl =
+    Toggles.radio Mdl [ choice.choiceIndex ] mdl
+      [ Toggles.value False
+      , Toggles.group groupName
+      , Toggles.ripple
+    --   , Options.onToggle MyRadioMsg1
+      ]
+      [ text choice.choiceText ]
+

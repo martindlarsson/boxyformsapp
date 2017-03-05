@@ -4,22 +4,6 @@ import Form.Models exposing(..)
 import Json.Decode exposing (int, string, nullable, Decoder, list, andThen, succeed)
 import Json.Decode.Pipeline exposing (decode, required, optional)
 
--- decodeForm : List Json.Decode.Value -> Result String Form
--- decodeForm modelJson =
---     let
---         firstFormInList = ( head modelJson )
---     in
---         case firstFormInList of
---             Just firstForm ->
---                 Json.Decode.decodeValue formDecoder firstForm
-            
---             Nothing ->
---                 Err "No forms in JSON string"
-
--- decodeForm : Json.Decode.Value -> Result String (List Form)
--- decodeForm modelJson =
---     Json.Decode.decodeValue (list formDecoder) modelJson
-
 
 decodeForm : Json.Decode.Value -> Result String (List Form)
 decodeForm modelJson =
@@ -61,10 +45,10 @@ questionDecoder =
 questionTypeDecoder : String -> Decoder QuestionType
 questionTypeDecoder typeString =
     case typeString of
-        "textType" -> Json.Decode.succeed TextType
-        "textType_email" -> Json.Decode.succeed TextType_email
-        "choiceType" -> Json.Decode.succeed ChoiceType
-        "infoType" -> Json.Decode.succeed InfoType
+        "TextType" -> Json.Decode.succeed TextType
+        "TextType_email" -> Json.Decode.succeed TextType_email
+        "ChoiceType" -> Json.Decode.succeed ChoiceType
+        "InfoType" -> Json.Decode.succeed InfoType
         _ -> Json.Decode.succeed NoType
         
 
