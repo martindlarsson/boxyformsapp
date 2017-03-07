@@ -4,7 +4,7 @@ import Messages exposing(Msg(..))
 import Models exposing(Model, Route(..))
 import Routing exposing(parseLocation)
 import Material
-import Ports exposing(getForm)
+import Ports exposing(getForm, getEvents)
 import List exposing(head)
 import Form.Models exposing(Answer, QuestionId)
 
@@ -44,9 +44,15 @@ update msg model =
                 _ = Debug.log "OnLocationChange" newRoute
             in
                 case newRoute of
-                    FormRoute formId ->
+                    FormRoute formId -> -- model.answers = []? tömma svaren?
                         ( { model | route = newRoute }, getForm formId )
-                        
+
+                    EventListRoute ->
+                        if (List.isEmpty model.events) then
+                            ( { model | route = newRoute }, getEvents () )
+                        else 
+                            ( { model | route = newRoute }, Cmd.none )
+
                     _ ->
                         ( { model | route = newRoute }, Cmd.none )
 

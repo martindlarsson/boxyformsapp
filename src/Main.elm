@@ -1,8 +1,7 @@
 module Main exposing (..)
 
--- import Html exposing(program)
 import Messages exposing(Msg(..))
-import Models exposing(Model, initialModel)
+import Models exposing(Model, initialModel, Route(..))
 import Update exposing(update)
 import View exposing(view)
 import Ports exposing(..)
@@ -29,7 +28,15 @@ init location =
         currentRoute =
             Routing.parseLocation location
     in
-        ( initialModel currentRoute, getEvents () )
+        case currentRoute of
+            EventListRoute ->
+                ( initialModel currentRoute, getEvents () )
+
+            FormRoute formId ->
+                ( initialModel currentRoute, getForm formId )
+
+            _ ->
+                ( initialModel currentRoute, Cmd.none )
 
 -- MAIN
 

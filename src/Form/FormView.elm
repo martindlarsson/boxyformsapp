@@ -20,21 +20,32 @@ formView model =
 
         Just form ->
             div []
-                (List.map (\formStep -> formStepView formStep model.mdl) form.formSteps)
+                (List.map (\formStep -> formStepView formStep model.answers model.mdl) form.formSteps)
 
 
-formStepView : FormStep -> Material.Model -> Html Msg
-formStepView formStep mdl =
+formStepView : FormStep -> Maybe (List Answer) -> Material.Model -> Html Msg
+formStepView formStep answers mdl =
     let
         questionViews =
-            List.map (\question -> div [] [ (questionView question mdl) ]) formStep.questions
+            List.map (\question -> div [] [ (questionView question (findAnswer question.questionId answers) mdl) ]) formStep.questions
     in
         div []
             ([ h3 [] [ text formStep.stepTitle ] ] ++ questionViews)
 
 
-questionView : Question -> Material.Model -> Html Msg
-questionView question mdl =
+findAnswer : QuestionId -> Maybe (List Answer) -> Maybe Answer
+findAnswer qId maybeAnswers =
+    case maybeAnswers of
+            Nothing -> Nothing
+
+            Just answers -> 
+                answers
+                    |> List.filter (\answer -> answer.questionId == qId)
+                    |> List.head
+
+
+questionView : Question -> Maybe Answer -> Material.Model -> Html Msg
+questionView question answer mdl =
     let
         questionText =
             text question.questionText
@@ -48,7 +59,7 @@ questionView question mdl =
                     (qTextEmailView question mdl)
 
                 ChoiceType ->
-                    qChoiceView question mdl
+                    qChoiceView question answer mdl 
 
                 InfoType ->
                     text ("text: " ++ question.questionText)
@@ -92,11 +103,11 @@ qInfoView question mdl =
     p [] [ text question.questionText ]
 
 
-qChoiceView : Question -> Material.Model -> Html Msg
-qChoiceView question mdl =
+qChoiceView : Question -> Maybe Answer -> Material.Model -> Html Msg
+qChoiceView question maybeAnswer mdl =
     let
         choiceToggles =
-            List.map (\choice -> qOptionView choice question.questionId question.questionText mdl) question.choices
+            List.map (\choice -> qOptionView choice question.questionId maybeAnswer question.questionText mdl) question.choices
 
         choiceToggelRows =
             List.map (\choiceToggle -> cell [ size All 12 ] [ choiceToggle ]) choiceToggles
@@ -106,14 +117,21 @@ qChoiceView question mdl =
             choiceToggelRows
 
 
-qOptionView : Choice -> QuestionId -> String -> Material.Model -> Html Msg
-qOptionView choice qusetionId groupName mdl =
-    Toggles.radio Mdl
-        [ choice.choiceIndex ]
-        mdl
-        [ Toggles.value False
-        , Toggles.group groupName
-        , Toggles.ripple
-        , Options.onToggle (SetAnswer qusetionId choice.choiceText)
-        ]
-        [ text choice.choiceText ]
+qOptionView : Choice -> QuestionId -> Maybe Answer -> String -> Material.Model -> Html Msg
+qOptionView choice qusetionId maybeAnswer groupName mdl =
+    let
+      toggleValue =
+        case maybeAnswer of
+            Nothing -> False
+
+            Just answer -> answer.answer == choice.choiceText
+    in
+        Toggles.radio Mdl
+            [ choice.choiceIndex ]
+            mdl
+            [ Toggles.value toggleValue
+            , Toggles.group groupName
+            , Toggles.ripple
+            , Options.onToggle (SetAnswer qusetionId choice.choiceText)
+            ]
+            [ text choice.choiceText ]
