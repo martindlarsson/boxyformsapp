@@ -8,6 +8,7 @@ import Messages exposing (Msg(..))
 import Material
 import Material.Textfield as Textfield
 import Material.Toggles as Toggles
+import Material.Options as Options
 import Material.Grid exposing(..)
 
 
@@ -49,7 +50,6 @@ questionView question mdl =
                 ChoiceType ->
                     qChoiceView question mdl
 
-                --text ("text: " ++ question.questionText)
                 InfoType ->
                     text ("text: " ++ question.questionText)
 
@@ -96,24 +96,24 @@ qChoiceView : Question -> Material.Model -> Html Msg
 qChoiceView question mdl =
     let
         choiceToggles =
-            List.map (\choice -> qOptionView choice question.questionText mdl) question.choices
+            List.map (\choice -> qOptionView choice question.questionId question.questionText mdl) question.choices
 
         choiceToggelRows =
-            List.map (\choiceToggle -> cell [ size All 6 ] [ choiceToggle ]) choiceToggles
+            List.map (\choiceToggle -> cell [ size All 12 ] [ choiceToggle ]) choiceToggles
     in
         grid
             []
             choiceToggelRows
 
 
-qOptionView : Choice -> String -> Material.Model -> Html Msg
-qOptionView choice groupName mdl =
+qOptionView : Choice -> QuestionId -> String -> Material.Model -> Html Msg
+qOptionView choice qusetionId groupName mdl =
     Toggles.radio Mdl
         [ choice.choiceIndex ]
         mdl
         [ Toggles.value False
         , Toggles.group groupName
         , Toggles.ripple
-          --   , Options.onToggle MyRadioMsg1
+        , Options.onToggle (SetAnswer qusetionId choice.choiceText)
         ]
         [ text choice.choiceText ]

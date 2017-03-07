@@ -14,4 +14,5 @@ type Msg
     | GotEventsMsg (List Event)
     | OnLocationChange Location
     | GotFormMsg (Result String (List Form))
+    | SetAnswer Int String
     | NoOp

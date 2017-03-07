@@ -38,3 +38,8 @@ type alias Choice =
     , choiceIndex : Index
     , choiceText : String
     }
+
+type alias Answer =
+    { questionId : QuestionId
+    , answer : String
+    }
