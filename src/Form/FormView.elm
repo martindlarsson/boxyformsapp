@@ -48,7 +48,7 @@ questionView : Question -> Maybe Answer -> Material.Model -> Html Msg
 questionView question answer mdl =
     let
         questionText =
-            text question.questionText
+            label [] [ text question.questionText ]
 
         questionControl =
             case question.questionType of
@@ -79,9 +79,8 @@ qTextView question mdl =
     Textfield.render Mdl
         [ question.questionIndex ]
         mdl
-        [ Textfield.label question.questionText
-        , Textfield.floatingLabel
-        , Textfield.text_
+        [ --Textfield.text_ TODO, lägg in eventuellt svar om anv backar i formuläret
+        Options.onInput (SetAnswer question.questionId)
         ]
         []
 
@@ -91,9 +90,10 @@ qTextEmailView question mdl =
     Textfield.render Mdl
         [ question.questionIndex ]
         mdl
-        [ Textfield.label question.questionText
-        , Textfield.floatingLabel
-        , Textfield.email
+        [ --Textfield.label question.questionText
+        -- , Textfield.floatingLabel
+        Textfield.email
+        , Options.onInput (SetAnswer question.questionId)
         ]
         []
 

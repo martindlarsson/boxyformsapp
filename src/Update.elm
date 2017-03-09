@@ -40,21 +40,22 @@ update msg model =
             let
                 newRoute =
                     parseLocation location
+
+                command =
+                    case newRoute of
+                        FormRoute formId -> getForm formId
+
+                        EventListRoute ->
+                            if (List.isEmpty model.events) then
+                                getEvents ()
+                            else 
+                                Cmd.none
+
+                        _ -> Cmd.none
                 
-                _ = Debug.log "OnLocationChange" newRoute
+                -- _ = Debug.log "OnLocationChange" newRoute
             in
-                case newRoute of
-                    FormRoute formId -> -- model.answers = []? tömma svaren?
-                        ( { model | route = newRoute }, getForm formId )
-
-                    EventListRoute ->
-                        if (List.isEmpty model.events) then
-                            ( { model | route = newRoute }, getEvents () )
-                        else 
-                            ( { model | route = newRoute }, Cmd.none )
-
-                    _ ->
-                        ( { model | route = newRoute }, Cmd.none )
+                ( { model | route = newRoute }, command )
 
         SetAnswer questionId answer ->
             let
@@ -84,6 +85,7 @@ updateAnswers model questionId answer =
                 Just answers -> answers
         keepAnswers =
             List.filter (\answer -> answer.questionId /= questionId) oldAnswers
+
         _ = Debug.log "updateAnsers" (keepAnswers ++ newAnswer)
     in
         keepAnswers ++ newAnswer
