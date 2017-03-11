@@ -11,7 +11,8 @@ type alias Model =
     { events : List Event
     , route : Route
     , form : Maybe Form
-    , answers : Maybe (List Answer)
+    , currentFormStep : Maybe Int
+    , answers : List Answer
     , mdl : Material.Model -- Boilerplate: model store for any and all Mdl components you use.
     }
 
@@ -20,7 +21,8 @@ initialModel route =
     { events = []
     , route = route
     , form = Nothing
-    , answers = Nothing
+    , currentFormStep = Nothing
+    , answers = []
     , mdl = Material.model
     }
 

@@ -1,7 +1,6 @@
 module Form.FormView exposing (..)
 
 import Html exposing (Html, div, text, h1, h2, h3, select, option, label, p)
--- import Html.Attributes exposing (..)
 import Models exposing (Model)
 import Form.Models exposing (..)
 import Messages exposing (Msg(..))
@@ -9,21 +8,31 @@ import Material
 import Material.Textfield as Textfield
 import Material.Toggles as Toggles
 import Material.Options as Options
-import Material.Grid exposing(..)
+import Material.Grid exposing (..)
+
+
+type alias QuestionModel =
+    { question : Question
+    , answer : Answer
+    , mdl : Material.Model
+    }
 
 
 formView : Model -> Html Msg
 formView model =
     case model.form of
         Nothing ->
-            text "Fel! inget formulär hittades"
+            text "Laddar in formuläret, snart så..."
+
+        -- Just emptyForm ->
+        --     text "Inget formulär hittade med detta id. Det verkar blivit något fel tyvärr."
 
         Just form ->
             div []
                 (List.map (\formStep -> formStepView formStep model.answers model.mdl) form.formSteps)
 
 
-formStepView : FormStep -> Maybe (List Answer) -> Material.Model -> Html Msg
+formStepView : FormStep -> List Answer -> Material.Model -> Html Msg
 formStepView formStep answers mdl =
     let
         questionViews =
@@ -33,36 +42,43 @@ formStepView formStep answers mdl =
             ([ h3 [] [ text formStep.stepTitle ] ] ++ questionViews)
 
 
-findAnswer : QuestionId -> Maybe (List Answer) -> Maybe Answer
+findAnswer : QuestionId -> List Answer -> Answer
 findAnswer qId maybeAnswers =
-    case maybeAnswers of
-            Nothing -> Nothing
+    let
+        maybeFoundAnswer =
+            maybeAnswers
+                |> List.filter (\answer -> answer.questionId == qId)
+                |> List.head
+    in
+        case maybeFoundAnswer of
+            Nothing ->
+                emptyAnswer qId
 
-            Just answers -> 
-                answers
-                    |> List.filter (\answer -> answer.questionId == qId)
-                    |> List.head
+            Just answer ->
+                answer
 
 
-questionView : Question -> Maybe Answer -> Material.Model -> Html Msg
+questionView : Question -> Answer -> Material.Model -> Html Msg
 questionView question answer mdl =
     let
+        questionModel = QuestionModel question answer mdl
+
         questionText =
             label [] [ text question.questionText ]
 
         questionControl =
             case question.questionType of
                 TextType ->
-                    (qTextView question mdl)
+                    qTextView questionModel
 
                 TextType_email ->
-                    (qTextEmailView question mdl)
+                    qTextEmailView questionModel
 
                 ChoiceType ->
-                    qChoiceView question answer mdl 
+                    qChoiceView questionModel
 
                 InfoType ->
-                    text ("text: " ++ question.questionText)
+                    qInfoView questionModel
 
                 NoType ->
                     text "Unknown question type"
@@ -74,40 +90,55 @@ questionView question answer mdl =
             ]
 
 
-qTextView : Question -> Material.Model -> Html Msg
-qTextView question mdl =
-    Textfield.render Mdl
-        [ question.questionIndex ]
-        mdl
-        [ --Textfield.text_ TODO, lägg in eventuellt svar om anv backar i formuläret
-        Options.onInput (SetAnswer question.questionId)
-        ]
-        []
-
-
-qTextEmailView : Question -> Material.Model -> Html Msg
-qTextEmailView question mdl =
-    Textfield.render Mdl
-        [ question.questionIndex ]
-        mdl
-        [ --Textfield.label question.questionText
-        -- , Textfield.floatingLabel
-        Textfield.email
-        , Options.onInput (SetAnswer question.questionId)
-        ]
-        []
-
-
-qInfoView : Question -> Material.Model -> Html Msg
-qInfoView question mdl =
-    p [] [ text question.questionText ]
-
-
-qChoiceView : Question -> Maybe Answer -> Material.Model -> Html Msg
-qChoiceView question maybeAnswer mdl =
+qTextView : QuestionModel -> Html Msg
+qTextView questionModel =
     let
+        question = questionModel.question
+
+        answer = questionModel.answer
+    in
+        Textfield.render Mdl
+            [ question.questionIndex ]
+            questionModel.mdl
+            [ Textfield.text_
+            , Options.onInput (SetAnswer question.questionId)
+            ]
+            [ text answer.answer ]
+
+
+qTextEmailView : QuestionModel -> Html Msg
+qTextEmailView questionModel =
+    let
+        question = questionModel.question
+
+        answer = questionModel.answer
+    in
+        Textfield.render Mdl
+            [ question.questionIndex ]
+            questionModel.mdl
+            [ Textfield.email
+            , Options.onInput (SetAnswer question.questionId)
+            ]
+            [ text answer.answer ]
+
+
+qInfoView : QuestionModel -> Html Msg
+qInfoView questionModel =
+    let
+        question = questionModel.question
+    in
+        p [] [ text question.questionText ]
+
+
+qChoiceView : QuestionModel -> Html Msg
+qChoiceView questionModel =
+    let
+        question = questionModel.question
+
+        answer = questionModel.answer
+
         choiceToggles =
-            List.map (\choice -> qOptionView choice question.questionId maybeAnswer question.questionText mdl) question.choices
+            List.map (\choice -> qOptionView choice questionModel) question.choices
 
         choiceToggelRows =
             List.map (\choiceToggle -> cell [ size All 12 ] [ choiceToggle ]) choiceToggles
@@ -117,21 +148,22 @@ qChoiceView question maybeAnswer mdl =
             choiceToggelRows
 
 
-qOptionView : Choice -> QuestionId -> Maybe Answer -> String -> Material.Model -> Html Msg
-qOptionView choice qusetionId maybeAnswer groupName mdl =
+qOptionView : Choice -> QuestionModel -> Html Msg
+qOptionView choice questionModel =
     let
-      toggleValue =
-        case maybeAnswer of
-            Nothing -> False
+        answer = questionModel.answer
 
-            Just answer -> answer.answer == choice.choiceText
+        question = questionModel.question
+
+        toggleValue =
+            answer.answer == choice.choiceText
     in
         Toggles.radio Mdl
             [ choice.choiceIndex ]
-            mdl
+            questionModel.mdl
             [ Toggles.value toggleValue
-            , Toggles.group groupName
+            , Toggles.group question.questionText
             , Toggles.ripple
-            , Options.onToggle (SetAnswer qusetionId choice.choiceText)
+            , Options.onToggle (SetAnswer question.questionId choice.choiceText)
             ]
             [ text choice.choiceText ]

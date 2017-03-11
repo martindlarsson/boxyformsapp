@@ -1,12 +1,13 @@
-module Update exposing(..)
+module Update exposing (..)
 
-import Messages exposing(Msg(..))
-import Models exposing(Model, Route(..))
-import Routing exposing(parseLocation)
+import Messages exposing (Msg(..))
+import Models exposing (Model, Route(..))
+import Routing exposing (parseLocation)
 import Material
-import Ports exposing(getForm, getEvents)
-import List exposing(head)
-import Form.Models exposing(Answer, QuestionId)
+import Ports exposing (getForm, getEvents)
+import List exposing (head)
+import Form.Models exposing (Answer, QuestionId)
+
 
 -- UPDATE
 
@@ -18,11 +19,12 @@ update msg model =
             -- let
             --     _ = Debug.log "GotEventsMsg" eventsList
             -- in
-                ( { model | events = eventsList }, Cmd.none )
+            ( { model | events = eventsList }, Cmd.none )
 
         EventFormClicked eventFormId ->
             let
-                _ = Debug.log "EventFormClicked" eventFormId
+                _ =
+                    Debug.log "EventFormClicked" eventFormId
             in
                 ( model, getForm eventFormId )
 
@@ -30,11 +32,25 @@ update msg model =
             case formResult of
                 Ok formList ->
                     let
-                        form = head formList
+                        form =
+                            head formList
+                        
+                        firstFormStep =
+                            case form of
+                                Nothing -> Nothing
+                                
+                                Just form -> head form.formSteps
+
+                        formStepIndex =
+                            case firstFormStep of
+                                Nothing -> 0
+
+                                Just formStep -> formStep.stepIndex
                     in
-                        ( { model | form = form }, Cmd.none )
+                        ( { model | form = form  }, Cmd.none ) --currentFormStep = formStepIndex }, Cmd.none )
+
                 Err errorMsg ->
-                    ( model , Cmd.none )
+                    ( model, Cmd.none )
 
         OnLocationChange location ->
             let
@@ -43,16 +59,18 @@ update msg model =
 
                 command =
                     case newRoute of
-                        FormRoute formId -> getForm formId
+                        FormRoute formId ->
+                            getForm formId
 
                         EventListRoute ->
                             if (List.isEmpty model.events) then
                                 getEvents ()
-                            else 
+                            else
                                 Cmd.none
 
-                        _ -> Cmd.none
-                
+                        _ ->
+                            Cmd.none
+
                 -- _ = Debug.log "OnLocationChange" newRoute
             in
                 ( { model | route = newRoute }, command )
@@ -60,9 +78,10 @@ update msg model =
         SetAnswer questionId answer ->
             let
                 -- _ = Debug.log "SetAnswer" ((toString questionId) ++ ", svar: " ++ answer )
-                newAnsers = updateAnswers model questionId answer
+                newAnsers =
+                    updateAnswers model questionId answer
             in
-                ( { model | answers = Just newAnsers }, Cmd.none )
+                ( { model | answers = newAnsers }, Cmd.none )
 
         -- Boilerplate: Mdl action handler.
         Mdl subMsg ->
@@ -72,20 +91,19 @@ update msg model =
             ( model, Cmd.none )
 
 
-
 updateAnswers : Model -> QuestionId -> String -> List Answer
 updateAnswers model questionId answer =
     let
-        newAnswer = [ Answer questionId answer ]
+        newAnswer =
+            [ Answer questionId answer ]
+
         oldAnswers =
-            case model.answers of
-                Nothing -> []
-                
-                -- if not empty, filter out the same answer
-                Just answers -> answers
+            model.answers
+
         keepAnswers =
             List.filter (\answer -> answer.questionId /= questionId) oldAnswers
 
-        _ = Debug.log "updateAnsers" (keepAnswers ++ newAnswer)
+        _ =
+            Debug.log "updateAnsers" (keepAnswers ++ newAnswer)
     in
         keepAnswers ++ newAnswer
