@@ -9,6 +9,10 @@ type alias FormId =
     Int
 
 
+type alias FormStepId =
+    Int
+
+
 type alias QuestionId =
     Int
 
@@ -33,7 +37,8 @@ emptyForm =
 
 
 type alias FormStep =
-    { stepTitle : String
+    { stepId : FormStepId
+    , stepTitle : String
     , stepIndex : Index
     , questions : List Question
     }
@@ -72,3 +77,30 @@ type alias Answer =
 emptyAnswer : QuestionId -> Answer
 emptyAnswer qId =
     Answer qId ""
+
+
+findAnswer : QuestionId -> List Answer -> Answer
+findAnswer qId maybeAnswers =
+    let
+        maybeFoundAnswer =
+            maybeAnswers
+                |> List.filter (\answer -> answer.questionId == qId)
+                |> List.head
+    in
+        case maybeFoundAnswer of
+            Nothing ->
+                emptyAnswer qId
+
+            Just answer ->
+                answer
+
+
+findFormStep : Maybe FormStepId -> List FormStep -> Maybe FormStep
+findFormStep formId formSteps =
+    case formId of
+        Nothing -> Nothing
+
+        Just formId ->
+            formSteps
+                |> List.filter (\formStep -> formStep.stepId == formId)
+                |> List.head

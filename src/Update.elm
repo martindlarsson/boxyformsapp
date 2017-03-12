@@ -41,13 +41,13 @@ update msg model =
                                 
                                 Just form -> head form.formSteps
 
-                        formStepIndex =
+                        formStepId =
                             case firstFormStep of
-                                Nothing -> 0
+                                Nothing -> Nothing
 
-                                Just formStep -> formStep.stepIndex
+                                Just formStep -> Just formStep.stepId
                     in
-                        ( { model | form = form  }, Cmd.none ) --currentFormStep = formStepIndex }, Cmd.none )
+                        ( { model | form = form, currentFormStepId = formStepId }, Cmd.none )
 
                 Err errorMsg ->
                     ( model, Cmd.none )
@@ -82,6 +82,12 @@ update msg model =
                     updateAnswers model questionId answer
             in
                 ( { model | answers = newAnsers }, Cmd.none )
+
+        FormNextButtonClicked ->
+            let
+                nextFormStep = -- TODO, hämta nästa formStepId... Gör om så att vi har index istället för Id i modellen
+            in
+                ( { model | currentFormStepId = nextFormStep.stepId }, Cmd.none )
 
         -- Boilerplate: Mdl action handler.
         Mdl subMsg ->

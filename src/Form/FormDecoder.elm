@@ -27,6 +27,7 @@ formDecoder =
 formStepDecoder : Decoder FormStep
 formStepDecoder =
     decode FormStep
+        |> required "stepId" int
         |> required "stepTitle" string
         |> required "stepIndex" int
         |> required "questions" (list questionDecoder)

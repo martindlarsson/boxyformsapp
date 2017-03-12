@@ -43,6 +43,7 @@
         "questionText" : "E-post",
         "questionType" : "TextType_email"
       } ],
+      "stepId" : 2352446,
       "stepIndex" : 1,
       "stepTitle" : "Kontaktinformation"
     }, {
@@ -84,6 +85,7 @@
         "questionText" : "Bana",
         "questionType" : "ChoiceType"
       } ],
+      "stepId" : 235235,
       "stepIndex" : 2,
       "stepTitle" : "Tävlingsinformation"
     } ],
@@ -105,6 +107,7 @@
         "questionText" : "E-post",
         "questionType" : "TextType_email"
       } ],
+      "stepId" : 2366464,
       "stepIndex" : 1,
       "stepTitle" : "Kontaktinformation"
     }, {
@@ -146,6 +149,7 @@
         "questionText" : "Bana",
         "questionType" : "ChoiceType"
       } ],
+      "stepId" : 4235,
       "stepIndex" : 2,
       "stepTitle" : "Tävlingsinformation"
     } ],
