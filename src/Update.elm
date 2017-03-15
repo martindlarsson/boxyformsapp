@@ -5,7 +5,7 @@ import Models exposing (Model, Route(..))
 import Routing exposing (parseLocation)
 import Material
 import Ports exposing (getForm, getEvents)
-import List exposing (head, tail)
+import List exposing (head, tail, append)
 import Form.Models exposing (Answer, QuestionId)
 
 
@@ -87,13 +87,19 @@ update msg model =
 
         FormNextButtonClicked ->
             let
+                currentFormStep =
+                    case model.currentFormStep of
+                        Nothing -> []
+
+                        Just currStep -> [ currStep ]
+
                 listHead =
                     case model.formStepsHead of
-                        Nothing -> [ model.currentFormStep ]
+                        Nothing -> Just currentFormStep
 
-                        Just steps -> steps :: [ model.currentFormStep ]
+                        Just steps -> Just (append steps currentFormStep)
 
-                currentStep =
+                newCurrentStep =
                     case model.formStepsTail of
                         Nothing -> Nothing
 
@@ -106,7 +112,7 @@ update msg model =
                         Just steps -> tail steps
             in
                         ( { model | formStepsHead = listHead
-                            , currentFormStep = currentStep
+                            , currentFormStep = newCurrentStep
                             , formStepsTail = listTail }, Cmd.none )
 
         -- Boilerplate: Mdl action handler.
