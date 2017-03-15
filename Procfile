@@ -1,1 +1,1 @@
-client: npm run dev
+client: yarn client
