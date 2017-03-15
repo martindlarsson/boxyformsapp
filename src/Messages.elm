@@ -15,4 +15,5 @@ type Msg
     | OnLocationChange Location
     | GotFormMsg (Result String (List Form))
     | SetAnswer Int String
+    | FormNextButtonClicked
     | NoOp
