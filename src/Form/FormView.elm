@@ -2,7 +2,7 @@ module Form.FormView exposing (..)
 
 import Html exposing (Html, div, text, h1, h2, h3, select, option, label, p)
 import Models exposing (Model)
-import Form.Models exposing (..)
+import Form.Models as Model exposing (..)
 import Messages exposing (Msg(..))
 import Helpers exposing(..)
 import Material
@@ -31,10 +31,8 @@ formView model =
 
         Just form ->
             let
-                currentStep = findFormStep model.currentFormStepId form.formSteps
-
                 indexCurrentStep =
-                    case currentStep of
+                    case model.currentFormStep of
                         Nothing ->
                             -1 -- TODO, hantera detta!
 
@@ -44,7 +42,7 @@ formView model =
                 numberOfSteps = List.length form.formSteps
             in
                 div []
-                    [ formStepView (findFormStep model.currentFormStepId form.formSteps) model.answers model.mdl
+                    [ formStepView model.currentFormStep model.answers model.mdl
                     , grid [] (formButtonView model indexCurrentStep numberOfSteps)
                     ]
 
@@ -74,7 +72,8 @@ nextButton model =
         [ Button.raised
         , Button.colored
         , Button.ripple
-        , Button.onClick FormNextButtonClicked
+        , Options.onClick FormNextButtonClicked
+        -- , Button.onClick FormNextButtonClicked
         ]
         [ text "Nästa" ]
 

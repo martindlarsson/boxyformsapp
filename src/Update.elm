@@ -5,7 +5,7 @@ import Models exposing (Model, Route(..))
 import Routing exposing (parseLocation)
 import Material
 import Ports exposing (getForm, getEvents)
-import List exposing (head)
+import List exposing (head, tail)
 import Form.Models exposing (Answer, QuestionId)
 
 
@@ -41,13 +41,15 @@ update msg model =
                                 
                                 Just form -> head form.formSteps
 
-                        formStepId =
-                            case firstFormStep of
+                        formStepsTail =
+                            case form of
                                 Nothing -> Nothing
-
-                                Just formStep -> Just formStep.stepId
+                                
+                                Just form -> tail form.formSteps
                     in
-                        ( { model | form = form, currentFormStepId = formStepId }, Cmd.none )
+                        ( { model | form = form
+                            , currentFormStep = firstFormStep
+                            , formStepsTail = formStepsTail }, Cmd.none )
 
                 Err errorMsg ->
                     ( model, Cmd.none )
@@ -85,9 +87,27 @@ update msg model =
 
         FormNextButtonClicked ->
             let
-                nextFormStep = -- TODO, hämta nästa formStepId... Gör om så att vi har index istället för Id i modellen
+                listHead =
+                    case model.formStepsHead of
+                        Nothing -> [ model.currentFormStep ]
+
+                        Just steps -> steps :: [ model.currentFormStep ]
+
+                currentStep =
+                    case model.formStepsTail of
+                        Nothing -> Nothing
+
+                        Just steps -> head steps
+
+                listTail =
+                    case model.formStepsTail of
+                        Nothing -> Nothing
+
+                        Just steps -> tail steps
             in
-                ( { model | currentFormStepId = nextFormStep.stepId }, Cmd.none )
+                        ( { model | formStepsHead = listHead
+                            , currentFormStep = currentStep
+                            , formStepsTail = listTail }, Cmd.none )
 
         -- Boilerplate: Mdl action handler.
         Mdl subMsg ->

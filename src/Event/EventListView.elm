@@ -10,7 +10,7 @@ import Material.Color as Color
 import Material.Card as Card
 import Material.Options as Options exposing (css)
 import Material.Elevation as Elevation
-import Material.Button as Button --exposing (..)
+import Material.Button as Button
 import Routing exposing(formPath)
 
 
