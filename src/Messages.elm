@@ -16,4 +16,5 @@ type Msg
     | GotFormMsg (Result String (List Form))
     | SetAnswer Int String
     | FormNextButtonClicked
+    | FormPrevButtonClicked
     | NoOp

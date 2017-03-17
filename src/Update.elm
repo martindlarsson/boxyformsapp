@@ -6,7 +6,8 @@ import Routing exposing (parseLocation)
 import Material
 import Ports exposing (getForm, getEvents)
 import List exposing (head, tail, append)
-import Form.Models exposing (Answer, QuestionId)
+import Form.Models exposing (Answer, QuestionId, nextFormStep, previouseFormStep, toFormStepList)
+import Helpers.ListHelpers exposing (..)
 
 
 -- UPDATE
@@ -32,24 +33,18 @@ update msg model =
             case formResult of
                 Ok formList ->
                     let
-                        form =
+                        jsonForm =
                             head formList
                         
-                        firstFormStep =
-                            case form of
-                                Nothing -> Nothing
-                                
-                                Just form -> head form.formSteps
+                        newForm = fromJsonFormToForm jsonForm
 
-                        formStepsTail =
-                            case form of
-                                Nothing -> Nothing
-                                
-                                Just form -> tail form.formSteps
                     in
-                        ( { model | form = form
-                            , currentFormStep = firstFormStep
-                            , formStepsTail = formStepsTail }, Cmd.none )
+                        case newForm of
+                            Err errMsg ->
+                                ( { model | form = ErrorLoadingForm errMsg }, Cmd.none )
+
+                            Ok form ->
+                                ( { model | form = form }, Cmd.none )
 
                 Err errorMsg ->
                     ( model, Cmd.none )
@@ -58,6 +53,14 @@ update msg model =
             let
                 newRoute =
                     parseLocation location
+
+                formState =
+                    case newRoute of
+                        FormRoute _ ->
+                            LoadingForm
+
+                        _ ->
+                            NoForm
 
                 command =
                     case newRoute of
@@ -75,7 +78,7 @@ update msg model =
 
                 -- _ = Debug.log "OnLocationChange" newRoute
             in
-                ( { model | route = newRoute }, command )
+                ( { model | route = newRoute, form = formState }, command )
 
         SetAnswer questionId answer ->
             let
@@ -87,33 +90,16 @@ update msg model =
 
         FormNextButtonClicked ->
             let
-                currentFormStep =
-                    case model.currentFormStep of
-                        Nothing -> []
-
-                        Just currStep -> [ currStep ]
-
-                listHead =
-                    case model.formStepsHead of
-                        Nothing -> Just currentFormStep
-
-                        Just steps -> Just (append steps currentFormStep)
-
-                newCurrentStep =
-                    case model.formStepsTail of
-                        Nothing -> Nothing
-
-                        Just steps -> head steps
-
-                listTail =
-                    case model.formStepsTail of
-                        Nothing -> Nothing
-
-                        Just steps -> tail steps
+                formStepList = nextFormStep model.formSteps
             in
-                        ( { model | formStepsHead = listHead
-                            , currentFormStep = newCurrentStep
-                            , formStepsTail = listTail }, Cmd.none )
+                ( { model | formSteps = formStepList }, Cmd.none )
+
+
+        FormPrevButtonClicked ->
+            let
+                formStepList = previouseFormStep model.formSteps
+            in
+                ( { model | formSteps = formStepList }, Cmd.none )
 
         -- Boilerplate: Mdl action handler.
         Mdl subMsg ->

@@ -4,7 +4,6 @@ import Html exposing (Html, div, text, h1, h2, h3, select, option, label, p)
 import Models exposing (Model)
 import Form.Models as Model exposing (..)
 import Messages exposing (Msg(..))
-import Helpers exposing(..)
 import Material
 import Material.Textfield as Textfield
 import Material.Toggles as Toggles
@@ -31,39 +30,49 @@ formView model =
 
         Just form ->
             let
-                indexCurrentStep =
-                    case model.currentFormStep of
-                        Nothing ->
-                            -1 -- TODO, hantera detta!
+                formStepState = getFormStepState model.formSteps
 
-                        Just currentStep ->
-                            indexOf form.formSteps currentStep
-
-                numberOfSteps = List.length form.formSteps
+                maybeCurrentStep = getCurrentStep model.formSteps
             in
                 div []
                     [ formStepView model.currentFormStep model.answers model.mdl
-                    , grid [] (formButtonView model indexCurrentStep numberOfSteps)
+                    , grid [] (formButtonView model formStepState)
                     ]
 
 
 
-formButtonView : Model -> Int -> Int -> List (Cell Msg)
-formButtonView model indexCurrentStep numberOfSteps =
-    if (indexCurrentStep == 0) && (numberOfSteps > 1) then
-        [ cell [ size All 12 ] [ nextButton model ]  ] --Första steget av många [Next]
-    else if (indexCurrentStep == 0) && ((indexCurrentStep + 1) == numberOfSteps) then
-        [ cell [ size All 12 ] [ payButton model ] ] --Första och sista steget [Betala]"
-    else if (indexCurrentStep + 1) < numberOfSteps then
-        [ cell [ size All 6 ] [ prevButton model ] -- "[Previouse] mitt i [Betala?]"
-        , cell [ size All 6 ] [ payButton model ]
-        ]
-    else if (indexCurrentStep + 1) == numberOfSteps then
-        [ cell [ size All 6 ] [ prevButton model ] -- [Previouse] Sista steget [Betala?]
-        , cell [ size All 6 ] [ payButton model ]
-        ]
-    else
-        [ cell [ size All 12 ] [ text "Något verkar ha gått snett..."] ]
+formButtonView : Model -> FormStepState -> List (Cell Msg)
+formButtonView model formStepState =
+    case formStepState of
+        Loading ->
+            []
+        
+        HasOneStep ->
+            [ cell [ size All 12 ] [ payButton model ] ]
+
+        HasPrevButNoNext ->
+            [ cell [ size All 6 ] [ prevButton model ] -- [Previouse] Sista steget [Betala?]
+            , cell [ size All 6 ] [ payButton model ]
+            ]
+
+        -- HasNoPrevButNext ->
+        --     [ cell [ size All 12 ] [ nextButton model ]  ]
+
+
+    -- if (indexCurrentStep == 0) && (numberOfSteps > 1) then
+    --     [ cell [ size All 12 ] [ nextButton model ]  ] --Första steget av många [Next]
+    -- else if (indexCurrentStep == 0) && ((indexCurrentStep + 1) == numberOfSteps) then
+    --     [ cell [ size All 12 ] [ payButton model ] ] --Första och sista steget [Betala]"
+    -- else if (indexCurrentStep + 1) < numberOfSteps then
+    --     [ cell [ size All 6 ] [ prevButton model ] -- "[Previouse] mitt i [Betala?]"
+    --     , cell [ size All 6 ] [ payButton model ]
+    --     ]
+    -- else if (indexCurrentStep + 1) == numberOfSteps then
+    --     [ cell [ size All 6 ] [ prevButton model ] -- [Previouse] Sista steget [Betala?]
+    --     , cell [ size All 6 ] [ payButton model ]
+    --     ]
+    -- else
+    --     [ cell [ size All 12 ] [ text "Något verkar ha gått snett..."] ]
 
 
 nextButton : Model -> Html Msg
@@ -73,7 +82,6 @@ nextButton model =
         , Button.colored
         , Button.ripple
         , Options.onClick FormNextButtonClicked
-        -- , Button.onClick FormNextButtonClicked
         ]
         [ text "Nästa" ]
 
@@ -84,7 +92,7 @@ prevButton model =
         [ Button.raised
         , Button.colored
         , Button.ripple
-        -- , Button.onClick FormPreviouseButtonClicked
+        , Options.onClick FormNextButtonClicked
         ]
         [ text "Föregående" ]
 
@@ -101,18 +109,14 @@ payButton model =
 
 
 
-formStepView : Maybe FormStep -> List Answer -> Material.Model -> Html Msg
+formStepView : FormStep -> List Answer -> Material.Model -> Html Msg
 formStepView formStep answers mdl =
-        case formStep of
-            Nothing -> text "Formuläret innehåller inga frågor. Något verkar vara på tok!"
-
-            Just formStep ->
-                let
-                    questionViews =
-                        List.map (\question -> div [] [ (questionView question (findAnswer question.questionId answers) mdl) ]) formStep.questions
-                in
-                    div []
-                        ([ h3 [] [ text formStep.stepTitle ] ] ++ questionViews)
+    let
+        questionViews =
+            List.map (\question -> div [] [ (questionView question (findAnswer question.questionId answers) mdl) ]) formStep.questions
+    in
+        div []
+            ([ h3 [] [ text formStep.stepTitle ] ] ++ questionViews)
 
 
 questionView : Question -> Answer -> Material.Model -> Html Msg

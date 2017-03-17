@@ -5,16 +5,16 @@ import Json.Decode exposing (int, string, nullable, Decoder, list, andThen, succ
 import Json.Decode.Pipeline exposing (decode, required, optional)
 
 
-decodeForm : Json.Decode.Value -> Result String (List Form)
+decodeForm : Json.Decode.Value -> Result String (List JsonForm)
 decodeForm modelJson =
     Json.Decode.decodeValue decodeFormList modelJson
 
-decodeFormList : Decoder (List Form)
+decodeFormList : Decoder (List JsonForm)
 decodeFormList =
     list formDecoder
 
 
-formDecoder : Decoder Form
+formDecoder : Decoder JsonForm
 formDecoder =
     decode Form
         |> required "eventId" int

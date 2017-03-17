@@ -2,7 +2,7 @@ module Models exposing(Model, initialModel, Route(..))
 
 import Material
 import Event.Models exposing(Event)
-import Form.Models exposing(Form, FormStep, Answer)
+import Form.Models exposing(..)
 
 -- MODEL
 
@@ -10,10 +10,7 @@ import Form.Models exposing(Form, FormStep, Answer)
 type alias Model =
     { events : List Event
     , route : Route
-    , form : Maybe Form
-    , formStepsHead : Maybe (List FormStep)
-    , currentFormStep : Maybe FormStep
-    , formStepsTail : Maybe (List FormStep)
+    , form : FormState
     , answers : List Answer
     , mdl : Material.Model -- Boilerplate: model store for any and all Mdl components you use.
     }
@@ -22,10 +19,7 @@ initialModel : Route -> Model
 initialModel route =
     { events = []
     , route = route
-    , form = Nothing
-    , formStepsHead = Nothing
-    , currentFormStep = Nothing
-    , formStepsTail = Nothing
+    , form = NoForm
     , answers = []
     , mdl = Material.model
     }
