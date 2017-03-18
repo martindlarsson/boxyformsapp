@@ -102,29 +102,33 @@ type alias Answer =
     }
 
 
-fromJsonFormToForm : JsonForm -> Result String Form
-fromJsonFormToForm jsonForm =
+fromJsonFormToForm : Maybe JsonForm -> Result String Form
+fromJsonFormToForm maybeJsonForm =
     let
-        firstStep =
-            case (head jsonForm.formSteps) of
-                Nothing -> Err "The form holds no form steps"
-
-                Just formStep -> formStep
-
-        formStepList =
-            { previouseSteps = []
-            , currentStep = firstStep
-            , nextSteps = (tail jsonForm.formSteps)
-            }
+        maybeFormStepList =
+            case maybeJsonForm of
+                Nothing -> Nothing
+                Just jsonForm -> toFormStepList jsonForm.formSteps
     in
-        Form
-            { eventId = jsonForm.eventId
-            , eventName = jsonForm.eventName
-            , orgName = jsonForm.orgName
-            , formId = jsonForm.formId
-            , formName = jsonForm.formName
-            , formSteps = formStepList
-            }
+        case maybeFormStepList of
+            Nothing -> Err "The form holds no form steps"
+
+            Just formStepList ->
+                case maybeJsonForm of
+                    Nothing ->
+                            Err "Empty form"
+
+                    Just jsonForm ->
+                        Ok (Form jsonForm.eventId jsonForm.eventName jsonForm.orgName jsonForm.formId jsonForm.formName formStepList)
+
+
+toFormStepList : List FormStep -> Maybe FormStepList
+toFormStepList list =
+    case list of
+        [] -> Nothing
+
+        firstStep :: restSteps ->
+            Just (FormStepList [] firstStep restSteps )
 
 
 emptyAnswer : QuestionId -> Answer
@@ -157,15 +161,6 @@ findFormStep formId formSteps =
             formSteps
                 |> List.filter (\formStep -> formStep.stepId == formId)
                 |> List.head
-
-
--- toFormStepList : List FormStep -> FormStepList
--- toFormStepList list =
---     case list of
---         [] -> NoSteps
-
---         firstStep :: restSteps ->
---             Steps { previouseSteps = [], currentStep = firstStep, nextSteps = restSteps }
 
 
 getCurrentStep : FormStepList -> FormStep
@@ -203,7 +198,7 @@ nextFormStep { previouseSteps, currentStep, nextSteps } =
                 Err "Can not go to next beqause there are no next step."
 
             Just currStep ->
-                Ok ( FormStepList { previouseSteps = newPrevSteps, currentStep = newCurrStep, nextSteps = newNextSteps })
+                Ok ( FormStepList newPrevSteps currStep newNextSteps )
 
 
 previouseFormStep : FormStepList -> Result String FormStepList
@@ -223,4 +218,4 @@ previouseFormStep { previouseSteps, currentStep, nextSteps } =
                 Err "Empty current step"
 
             Just currStep ->
-                Ok ( FormStepList { previouseSteps = newPrevSteps, currentStep = currStep, nextSteps = newNextSteps })
+                Ok ( FormStepList newPrevSteps currStep newNextSteps )

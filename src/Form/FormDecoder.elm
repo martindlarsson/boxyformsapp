@@ -16,7 +16,7 @@ decodeFormList =
 
 formDecoder : Decoder JsonForm
 formDecoder =
-    decode Form
+    decode JsonForm
         |> required "eventId" int
         |> required "eventName" string
         |> required "orgName" string

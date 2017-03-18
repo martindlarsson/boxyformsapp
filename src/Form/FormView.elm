@@ -22,20 +22,26 @@ type alias QuestionModel =
 formView : Model -> Html Msg
 formView model =
     case model.form of
-        Nothing ->
-            text "Laddar in formuläret, snart så..."
+        NoForm ->
+            text "Inget formulär har valts"
+
+        LoadingForm ->
+            text "Laddar in formuläret, snart så..." 
+
+        ErrorLoadingForm errMsg ->
+            text ("Fel vid laddning av formulär. " ++ errMsg)
 
         -- Just emptyForm ->
         --     text "Inget formulär hittade med detta id. Det verkar blivit något fel tyvärr."
 
-        Just form ->
+        FormLoaded form ->
             let
-                formStepState = getFormStepState model.formSteps
+                formStepState = getFormStepState form.formSteps
 
-                maybeCurrentStep = getCurrentStep model.formSteps
+                currentStep = getCurrentStep form.formSteps
             in
                 div []
-                    [ formStepView model.currentFormStep model.answers model.mdl
+                    [ formStepView currentStep model.answers model.mdl
                     , grid [] (formButtonView model formStepState)
                     ]
 
@@ -54,6 +60,14 @@ formButtonView model formStepState =
             [ cell [ size All 6 ] [ prevButton model ] -- [Previouse] Sista steget [Betala?]
             , cell [ size All 6 ] [ payButton model ]
             ]
+
+        HasNoPrevButNext ->
+            [ cell [ size All 12 ] [ nextButton model ]  ] --Första steget av många [Next]
+
+        HasPrevAndNext ->
+            [ cell [ size All 6 ] [ prevButton model ] -- "[Previouse] mitt i [Betala?]"
+            , cell [ size All 6 ] [ payButton model ] ]
+        
 
         -- HasNoPrevButNext ->
         --     [ cell [ size All 12 ] [ nextButton model ]  ]
