@@ -102,24 +102,16 @@ type alias Answer =
     }
 
 
-fromJsonFormToForm : Maybe JsonForm -> Result String Form
-fromJsonFormToForm maybeJsonForm =
+fromJsonFormToForm : JsonForm -> Result String Form
+fromJsonFormToForm jsonForm =
     let
-        maybeFormStepList =
-            case maybeJsonForm of
-                Nothing -> Nothing
-                Just jsonForm -> toFormStepList jsonForm.formSteps
+        maybeFormStepList = toFormStepList jsonForm.formSteps
     in
         case maybeFormStepList of
             Nothing -> Err "The form holds no form steps"
 
-            Just formStepList ->
-                case maybeJsonForm of
-                    Nothing ->
-                            Err "Empty form"
+            Just formStepList ->  Ok (Form jsonForm.eventId jsonForm.eventName jsonForm.orgName jsonForm.formId jsonForm.formName formStepList)
 
-                    Just jsonForm ->
-                        Ok (Form jsonForm.eventId jsonForm.eventName jsonForm.orgName jsonForm.formId jsonForm.formName formStepList)
 
 
 toFormStepList : List FormStep -> Maybe FormStepList

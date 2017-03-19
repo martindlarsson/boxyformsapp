@@ -13,7 +13,7 @@ type Msg
     | EventFormClicked Int
     | GotEventsMsg (List Event)
     | OnLocationChange Location
-    | GotFormMsg (Result String (List JsonForm))
+    | GotFormMsg (Result String JsonForm)
     | SetAnswer Int String
     | FormNextButtonClicked
     | FormPrevButtonClicked

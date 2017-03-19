@@ -30,12 +30,9 @@ update msg model =
 
         GotFormMsg formResult ->
             case formResult of
-                Ok formList ->
+                Ok newJsonForm ->
                     let
-                        maybeJsonForm = head formList
-                        
-                        newForm = fromJsonFormToForm maybeJsonForm
-
+                        newForm = fromJsonFormToForm newJsonForm
                     in
                         case newForm of
                             Err errMsg ->
@@ -45,7 +42,10 @@ update msg model =
                                 ( { model | form = FormLoaded form }, Cmd.none )
 
                 Err errorMsg ->
-                    ( model, Cmd.none )
+                let
+                  _ = Debug.log "Err GotFormMsg" errorMsg
+                in
+                    ( { model | form = ErrorLoadingForm errorMsg }, Cmd.none )
 
         OnLocationChange location ->
             let
