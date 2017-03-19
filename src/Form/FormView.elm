@@ -67,26 +67,6 @@ formButtonView model formStepState =
         HasPrevAndNext ->
             [ cell [ size All 6 ] [ prevButton model ] -- "[Previouse] mitt i [Betala?]"
             , cell [ size All 6 ] [ payButton model ] ]
-        
-
-        -- HasNoPrevButNext ->
-        --     [ cell [ size All 12 ] [ nextButton model ]  ]
-
-
-    -- if (indexCurrentStep == 0) && (numberOfSteps > 1) then
-    --     [ cell [ size All 12 ] [ nextButton model ]  ] --Första steget av många [Next]
-    -- else if (indexCurrentStep == 0) && ((indexCurrentStep + 1) == numberOfSteps) then
-    --     [ cell [ size All 12 ] [ payButton model ] ] --Första och sista steget [Betala]"
-    -- else if (indexCurrentStep + 1) < numberOfSteps then
-    --     [ cell [ size All 6 ] [ prevButton model ] -- "[Previouse] mitt i [Betala?]"
-    --     , cell [ size All 6 ] [ payButton model ]
-    --     ]
-    -- else if (indexCurrentStep + 1) == numberOfSteps then
-    --     [ cell [ size All 6 ] [ prevButton model ] -- [Previouse] Sista steget [Betala?]
-    --     , cell [ size All 6 ] [ payButton model ]
-    --     ]
-    -- else
-    --     [ cell [ size All 12 ] [ text "Något verkar ha gått snett..."] ]
 
 
 nextButton : Model -> Html Msg
@@ -106,7 +86,7 @@ prevButton model =
         [ Button.raised
         , Button.colored
         , Button.ripple
-        , Options.onClick FormNextButtonClicked
+        , Options.onClick FormPrevButtonClicked
         ]
         [ text "Föregående" ]
 
