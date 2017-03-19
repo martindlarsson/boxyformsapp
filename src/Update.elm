@@ -86,59 +86,20 @@ update msg model =
 
         FormNextButtonClicked ->
             let
-                formState = model.form
+                oldFormState = model.form
+
+                newFormState = moveInForm oldFormState MoveNext
             in
-                case formState of
-                    FormLoaded form ->
-                        let
-                            formStepList = nextFormStep form.formSteps
-                        in
-                            case formStepList of
-                                Err errMsg ->
-                                    ( { model | form = (ErrorLoadingForm errMsg) }, Cmd.none )
-
-                                Ok stepList ->
-                                    let
-                                        newForm = { form | formSteps = stepList }
-
-                                        newFormState = FormLoaded newForm
-                                    in
-                                        ( { model | form = newFormState }, Cmd.none )
-
-                    _ ->
-                        let
-                            _ = Debug.log "Error in FormNextButtonClicked" (toString formState)
-                        in
-                            ( { model | form = (ErrorLoadingForm "Error while loading form step") }, Cmd.none )
+                ( { model | form = newFormState }, Cmd.none )
 
 
         FormPrevButtonClicked ->
             let
-                formState = model.form
+                oldFormState = model.form
+
+                newFormState = moveInForm oldFormState MovePreviouse
             in
-                case formState of
-                    FormLoaded form ->
-                        let
-                            formStepList = previouseFormStep form.formSteps
-                        in
-                            case formStepList of
-                                Err errMsg ->
-                                    ( { model | form = (ErrorLoadingForm errMsg) }, Cmd.none )
-
-                                Ok stepList ->
-                                    let
-                                        newForm = { form | formSteps = stepList }
-
-                                        newFormState = FormLoaded newForm
-                                    in
-                                        ( { model | form = newFormState }, Cmd.none )
-
-                    _ ->
-                        let
-                            _ = Debug.log "Error in FormPrevButtonClicked" (toString formState)
-                        in
-                            ( { model | form = (ErrorLoadingForm "Error while loading form step") }, Cmd.none )
-
+                ( { model | form = newFormState }, Cmd.none )
 
         -- Boilerplate: Mdl action handler.
         Mdl subMsg ->

@@ -29,23 +29,6 @@ app.ports.getForm.subscribe(function (formId) {
     formRef.orderByChild("formId").equalTo(formId).limitToFirst(1).once('value').then(function (snapshot) {
         var form = getFirstObject(snapshot.val());
         app.ports.gotForm.send(form);
-
-        // if (resultObject instanceof Array) {
-        //     for (var i = 0; i< resultObject.length; i++) {
-        //         var resultItem = resultObject[i];
-        //         if (resultItem != undefined) {
-        //             app.ports.gotForm.send(resultItem);
-        //         }
-        //     }
-        // }
-        // else if (resultObject instanceof Object) {
-        //     for(var key in resultObject){
-        //         if (resultObject[key] != undefined) {
-        //             app.ports.gotForm.send(resultObject[key]);
-        //             continue;
-        //         }
-        //     }
-        // }
     })
 });
 
@@ -66,10 +49,3 @@ function getFirstObject(resultObject) {
         }
     }
 }
-
-// var getForm = function(formId) {
-//     formRef.orderByChild("formId").equalTo(formId).limitToFirst(1).once('value').then(function (snapshot) {
-//         console.log("Form from Friebasen:");
-//         console.log(snapshot.val());
-//     })
-// }

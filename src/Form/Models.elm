@@ -143,6 +143,37 @@ findAnswer qId maybeAnswers =
             Just answer ->
                 answer
 
+type MoveOperation
+    = MoveNext
+    | MovePreviouse
+    | MovePay
+
+
+moveInForm : FormState -> MoveOperation -> FormState
+moveInForm formState moveOp =
+    case formState of
+        FormLoaded form ->
+            let
+                formStepList =
+                    case moveOp of
+                        MoveNext -> nextFormStep form.formSteps
+                        MovePreviouse -> previouseFormStep form.formSteps
+                        _ -> Err "Unsupported move operation"
+            in
+                case formStepList of
+                    Err errMsg ->
+                        ErrorLoadingForm errMsg
+
+                    Ok stepList ->
+                        let
+                            newForm = { form | formSteps = stepList }
+                        in
+                            FormLoaded newForm
+
+        _ ->
+            ErrorLoadingForm "Error while loading form step"
+
+
 
 findFormStep : Maybe FormStepId -> List FormStep -> Maybe FormStep
 findFormStep formId formSteps =
@@ -158,6 +189,7 @@ findFormStep formId formSteps =
 getCurrentStep : FormStepList -> FormStep
 getCurrentStep { previouseSteps, currentStep, nextSteps } =
     currentStep
+
 
 getFormStepState : FormStepList -> FormStepState
 getFormStepState { previouseSteps, currentStep, nextSteps } =
