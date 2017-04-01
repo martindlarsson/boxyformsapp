@@ -57,8 +57,7 @@ type alias FormStepList =
     }
 
 type FormStepState
-    = Loading
-    | HasOneStep
+    = HasOneStep
     | HasNoPrevButNext
     | HasPrevButNoNext
     | HasPrevAndNext
@@ -193,16 +192,19 @@ getCurrentStep { previouseSteps, currentStep, nextSteps } =
 
 getFormStepState : FormStepList -> FormStepState
 getFormStepState { previouseSteps, currentStep, nextSteps } =
+    -- let
+    --   _ = Debug.log "getFormStepState" ("prev: " ++ (toString (length previouseSteps)) ++ " curr: " ++ (toString currentStep) ++ " next: " ++ (toString (length nextSteps)))
+    -- in
+      
     case (previouseSteps, currentStep, nextSteps ) of
         ( [], _ , [] ) -> HasOneStep
 
-        ( [ items ], _ , [] ) -> HasPrevButNoNext
+        ( x :: xs , _ , [] ) -> HasPrevButNoNext
 
-        ( [], _ , [ items ] ) -> HasNoPrevButNext
+        ( [] , _ , _ :: _ ) -> HasNoPrevButNext
 
-        ( [ items ], _ , [ items2 ] ) -> HasPrevAndNext
+        ( _ :: _ , _ , _ :: _ ) -> HasPrevAndNext
 
-        _ -> Loading
 
 
 nextFormStep : FormStepList -> Result String FormStepList

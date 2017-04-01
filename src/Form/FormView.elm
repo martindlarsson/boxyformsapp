@@ -26,19 +26,18 @@ formView model =
             text "Inget formulär har valts"
 
         LoadingForm ->
-            text "Laddar in formuläret, snart så..." 
+            text "Laddar in formuläret, snart så..."
 
         ErrorLoadingForm errMsg ->
             text ("Fel vid laddning av formulär. " ++ errMsg)
 
-        -- Just emptyForm ->
-        --     text "Inget formulär hittade med detta id. Det verkar blivit något fel tyvärr."
-
         FormLoaded form ->
             let
-                formStepState = getFormStepState form.formSteps
+                formStepState =
+                    getFormStepState form.formSteps
 
-                currentStep = getCurrentStep form.formSteps
+                currentStep =
+                    getCurrentStep form.formSteps
             in
                 div []
                     [ formStepView currentStep model.answers model.mdl
@@ -46,32 +45,31 @@ formView model =
                     ]
 
 
-
 formButtonView : Model -> FormStepState -> List (Cell Msg)
 formButtonView model formStepState =
     case formStepState of
-        Loading ->
-            []
-        
         HasOneStep ->
             [ cell [ size All 12 ] [ payButton model ] ]
 
         HasPrevButNoNext ->
-            [ cell [ size All 6 ] [ prevButton model ] -- [Previouse] Sista steget [Betala?]
+            [ cell [ size All 6 ] [ prevButton model ]
             , cell [ size All 6 ] [ payButton model ]
             ]
 
         HasNoPrevButNext ->
-            [ cell [ size All 12 ] [ nextButton model ]  ] --Första steget av många [Next]
+            [ cell [ size All 12 ] [ nextButton model ] ]
 
         HasPrevAndNext ->
-            [ cell [ size All 6 ] [ prevButton model ] -- "[Previouse] mitt i [Betala?]"
-            , cell [ size All 6 ] [ payButton model ] ]
+            [ cell [ size All 6 ] [ prevButton model ]
+            , cell [ size All 6 ] [ nextButton model ]
+            ]
 
 
 nextButton : Model -> Html Msg
 nextButton model =
-    Button.render Mdl [0] model.mdl
+    Button.render Mdl
+        [ 0 ]
+        model.mdl
         [ Button.raised
         , Button.colored
         , Button.ripple
@@ -82,7 +80,9 @@ nextButton model =
 
 prevButton : Model -> Html Msg
 prevButton model =
-    Button.render Mdl [1] model.mdl
+    Button.render Mdl
+        [ 1 ]
+        model.mdl
         [ Button.raised
         , Button.colored
         , Button.ripple
@@ -93,14 +93,16 @@ prevButton model =
 
 payButton : Model -> Html Msg
 payButton model =
-    Button.render Mdl [2] model.mdl
+    Button.render Mdl
+        [ 2 ]
+        model.mdl
         [ Button.raised
         , Button.colored
         , Button.ripple
+
         -- , Button.onClick FormPayButtonClicked
         ]
         [ text "Betala" ]
-
 
 
 formStepView : FormStep -> List Answer -> Material.Model -> Html Msg
@@ -116,7 +118,8 @@ formStepView formStep answers mdl =
 questionView : Question -> Answer -> Material.Model -> Html Msg
 questionView question answer mdl =
     let
-        questionModel = QuestionModel question answer mdl
+        questionModel =
+            QuestionModel question answer mdl
 
         questionText =
             label [] [ text question.questionText ]
@@ -148,9 +151,11 @@ questionView question answer mdl =
 qTextView : QuestionModel -> Html Msg
 qTextView questionModel =
     let
-        question = questionModel.question
+        question =
+            questionModel.question
 
-        answer = questionModel.answer
+        answer =
+            questionModel.answer
     in
         Textfield.render Mdl
             [ question.questionIndex ]
@@ -164,9 +169,11 @@ qTextView questionModel =
 qTextEmailView : QuestionModel -> Html Msg
 qTextEmailView questionModel =
     let
-        question = questionModel.question
+        question =
+            questionModel.question
 
-        answer = questionModel.answer
+        answer =
+            questionModel.answer
     in
         Textfield.render Mdl
             [ question.questionIndex ]
@@ -180,7 +187,8 @@ qTextEmailView questionModel =
 qInfoView : QuestionModel -> Html Msg
 qInfoView questionModel =
     let
-        question = questionModel.question
+        question =
+            questionModel.question
     in
         p [] [ text question.questionText ]
 
@@ -188,9 +196,11 @@ qInfoView questionModel =
 qChoiceView : QuestionModel -> Html Msg
 qChoiceView questionModel =
     let
-        question = questionModel.question
+        question =
+            questionModel.question
 
-        answer = questionModel.answer
+        answer =
+            questionModel.answer
 
         choiceToggles =
             List.map (\choice -> qOptionView choice questionModel) question.choices
@@ -206,9 +216,11 @@ qChoiceView questionModel =
 qOptionView : Choice -> QuestionModel -> Html Msg
 qOptionView choice questionModel =
     let
-        answer = questionModel.answer
+        answer =
+            questionModel.answer
 
-        question = questionModel.question
+        question =
+            questionModel.question
 
         toggleValue =
             answer.answer == choice.choiceText
