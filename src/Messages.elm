@@ -1,19 +1,20 @@
-module Messages exposing(Msg(..))
+module Messages exposing (Msg(..))
 
 import Material
-import Event.Models exposing(Event)
-import Form.Models exposing(JsonForm)
 import Navigation exposing (Location)
+import Firebase.Database.Types
+
 
 -- MESSAGES
 
 
 type Msg
     = Mdl (Material.Msg Msg)
-    | EventFormClicked Int
-    | GotEventsMsg (List Event)
+    | EventFormClicked String
+    | GetAllEvents -- Nödvändig?
+    | GotEventsMsg Firebase.Database.Types.Snapshot -- (List Event)
     | OnLocationChange Location
-    | GotFormMsg (Result String JsonForm)
+    | GotFormMsg Firebase.Database.Types.Snapshot -- (Result String JsonForm)
     | SetAnswer Int String
     | FormNextButtonClicked
     | FormPrevButtonClicked

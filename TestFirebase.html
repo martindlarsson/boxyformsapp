@@ -1,0 +1,130 @@
+<html>
+    <head></head>
+    <body>
+        <h1>Hello Firebase</h1>
+        <script src="https://www.gstatic.com/firebasejs/3.7.5/firebase.js"></script>
+        <script>
+            // Initialize Firebase
+            var config = {
+                apiKey: "AIzaSyCWZWSkUj-3HQdHhk6xGsxvn0Me8eD6KWU",
+                authDomain: "boxyformsdb.firebaseapp.com",
+                databaseURL: "https://boxyformsdb.firebaseio.com",
+                projectId: "boxyformsdb",
+                storageBucket: "boxyformsdb.appspot.com",
+                messagingSenderId: "133792302370"
+            };
+            firebase.initializeApp(config);
+
+            // Get a reference to the database service
+            var database = firebase.database();
+
+            var testForm = {
+    "eventId" : 3,
+    "eventName" : "Hovfjället Trail",
+    "formId" : 3,
+    "formName" : "Anmälan till Hovfjället Trail",
+    "formSteps" : [ {
+      "questions" : [ {
+        "questionId" : 1,
+        "questionIndex" : 1,
+        "questionText" : "Namn",
+        "questionType" : "TextType"
+      }, {
+        "questionId" : 123535,
+        "questionIndex" : 2,
+        "questionText" : "E-post",
+        "questionType" : "TextType_email"
+      } ],
+      "stepId" : 2352446,
+      "stepIndex" : 1,
+      "stepTitle" : "Kontaktinformation"
+    }, {
+      "questions" : [ {
+        "questionId" : 1,
+        "questionIndex" : 1,
+        "questionText" : "Namn",
+        "questionType" : "TextType"
+      }, {
+        "questionId" : 123535,
+        "questionIndex" : 2,
+        "questionText" : "E-post",
+        "questionType" : "TextType_email"
+      } ],
+      "stepId" : 2352446,
+      "stepIndex" : 2,
+      "stepTitle" : "Kontaktinformation"
+    }, {
+      "questions" : [ {
+        "questionId" : 1,
+        "questionIndex" : 1,
+        "questionText" : "Namn",
+        "questionType" : "TextType"
+      }, {
+        "questionId" : 123535,
+        "questionIndex" : 2,
+        "questionText" : "E-post",
+        "questionType" : "TextType_email"
+      } ],
+      "stepId" : 2352446,
+      "stepIndex" : 3,
+      "stepTitle" : "Kontaktinformation"
+    }, {
+      "questions" : [ {
+        "questionId" : 155535,
+        "questionIndex" : 1,
+        "questionText" : "Lagnamn",
+        "questionType" : "TextType"
+      }, {
+        "choices" : [ {
+          "choiceFee" : 0,
+          "choiceIndex" : 1,
+          "choiceText" : "Herr"
+        }, {
+          "choiceFee" : 0,
+          "choiceIndex" : 2,
+          "choiceText" : "Dam"
+        }, {
+          "choiceFee" : 0,
+          "choiceIndex" : 3,
+          "choiceText" : "Mix"
+        } ],
+        "questionId" : 1553535235,
+        "questionIndex" : 2,
+        "questionText" : "Klass",
+        "questionType" : "ChoiceType"
+      }, {
+        "choices" : [ {
+          "choiceFee" : 800,
+          "choiceIndex" : 1,
+          "choiceText" : "Lång"
+        }, {
+          "choiceFee" : 600,
+          "choiceIndex" : 2,
+          "choiceText" : "Kort"
+        } ],
+        "questionId" : 346345,
+        "questionIndex" : 3,
+        "questionText" : "Bana",
+        "questionType" : "ChoiceType"
+      } ],
+      "stepId" : 235235,
+      "stepIndex" : 4,
+      "stepTitle" : "Tävlingsinformation"
+    } ],
+    "orgName" : "Torsby IF"
+  }
+
+        
+            // Get a key for a new Post.
+            var newPostKey = firebase.database().ref().child('forms').push().key;
+
+            // Write the new post's data simultaneously in the posts list and the user's post list.
+            var updates = {};
+            updates['/forms/' + newPostKey] = testForm;
+            // updates['/user-posts/' + uid + '/' + newPostKey] = postData;
+
+            var donno = firebase.database().ref().update(updates);
+
+        </script>
+    </body>
+</html>

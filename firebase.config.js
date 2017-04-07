@@ -1,7 +1,8 @@
 module.exports = {
-    apiKey: "AIzaSyClCp4gW0M80yAYuHVozyBANy8P4TwW7sU",
-    authDomain: "fofy-a484a.firebaseapp.com",
-    databaseURL: "https://fofy-a484a.firebaseio.com",
-    storageBucket: "fofy-a484a.appspot.com",
-    messagingSenderId: "614167954208"
+    apiKey: "AIzaSyCWZWSkUj-3HQdHhk6xGsxvn0Me8eD6KWU",
+    authDomain: "boxyformsdb.firebaseapp.com",
+    databaseURL: "https://boxyformsdb.firebaseio.com",
+    projectId: "boxyformsdb",
+    storageBucket: "boxyformsdb.appspot.com",
+    messagingSenderId: "133792302370"
 };

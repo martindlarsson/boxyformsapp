@@ -4,9 +4,16 @@ import Messages exposing (Msg(..))
 import Models exposing (Model, Route(..))
 import Routing exposing (parseLocation)
 import Material
-import Ports exposing (getForm, getEvents)
 import List exposing (head, tail, append)
 import Form.Models exposing (..)
+import Form.FormDecoder exposing (decodeForm)
+import Event.EventDecoder exposing (..)
+import Event.Query exposing (getAllEventsQueryCmd)
+import Form.Query exposing (getFormQueryCmd)
+import Firebase.Database
+import Firebase.Database.Snapshot
+import Firebase.Database.Reference
+import Task
 
 
 -- UPDATE
@@ -15,37 +22,70 @@ import Form.Models exposing (..)
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        GotEventsMsg eventsList ->
-            -- let
-            --     _ = Debug.log "GotEventsMsg" eventsList
-            -- in
-            ( { model | events = eventsList }, Cmd.none )
+        GetAllEvents ->
+            let
+                eventsRef =
+                    model.db
+                        |> Firebase.Database.ref (Just "events")
+            in
+                ( { model | route = EventListRoute }, Task.perform GotEventsMsg (Firebase.Database.Reference.once "value" eventsRef) )
+
+        GotEventsMsg eventsSnapshot ->
+            let
+                eventListResult =
+                    eventsSnapshot
+                        |> Firebase.Database.Snapshot.value
+                        |> decodeEvents
+            in
+                case eventListResult of
+                    Ok eventList ->
+                        ( { model | events = eventList }, Cmd.none )
+
+                    Err errorMsg ->
+                        let
+                            _ =
+                                Debug.log "" errorMsg
+                        in
+                            ( model, Cmd.none )
 
         EventFormClicked eventFormId ->
+            ( { model | route = (FormRoute eventFormId) }, getFormQueryCmd model eventFormId )
+
+        GotFormMsg formSnapshot ->
             let
-                _ =
-                    Debug.log "EventFormClicked" eventFormId
+                formResult =
+                    formSnapshot
+                        |> Firebase.Database.Snapshot.value
+                        |> decodeForm
+
+                -- _ =
+                --     Debug.log "GotFormMsg" formResult
             in
-                ( model, getForm eventFormId )
+                case formResult of
+                    Ok newJsonForm ->
+                        let
+                            newFormResult =
+                                fromJsonFormToForm newJsonForm
 
-        GotFormMsg formResult ->
-            case formResult of
-                Ok newJsonForm ->
-                    let
-                        newForm = fromJsonFormToForm newJsonForm
-                    in
-                        case newForm of
-                            Err errMsg ->
-                                ( { model | form = ErrorLoadingForm errMsg }, Cmd.none )
+                            -- fromJsonFormListToForm newJsonForm
+                        in
+                            case newFormResult of
+                                Err errMsg ->
+                                    ( { model | form = ErrorLoadingForm errMsg }, Cmd.none )
 
-                            Ok form ->
-                                ( { model | form = FormLoaded form }, Cmd.none )
+                                Ok form ->
+                                    -- let
+                                    -- _ =
+                                    --     Debug.log "Jaha" "Varför händer inget?"
+                                    -- in
+                                    ( { model | form = FormLoaded form }, Cmd.none )
 
-                Err errorMsg ->
-                let
-                  _ = Debug.log "Err GotFormMsg" errorMsg
-                in
-                    ( { model | form = ErrorLoadingForm errorMsg }, Cmd.none )
+                    Err errorMsg ->
+                        let
+                            _ =
+                                Debug.log "Err GotFormMsg" errorMsg
+                        in
+                            ( { model | form = ErrorLoadingForm errorMsg }, Cmd.none )
 
         OnLocationChange location ->
             let
@@ -54,18 +94,20 @@ update msg model =
 
                 formState =
                     case newRoute of
-                        FormRoute _ -> LoadingForm
+                        FormRoute _ ->
+                            LoadingForm
 
-                        _ -> NoForm
+                        _ ->
+                            NoForm
 
                 command =
                     case newRoute of
                         FormRoute formId ->
-                            getForm formId
+                            getFormQueryCmd model formId
 
                         EventListRoute ->
                             if (List.isEmpty model.events) then
-                                getEvents ()
+                                getAllEventsQueryCmd model
                             else
                                 Cmd.none
 
@@ -86,18 +128,21 @@ update msg model =
 
         FormNextButtonClicked ->
             let
-                oldFormState = model.form
+                oldFormState =
+                    model.form
 
-                newFormState = moveInForm oldFormState MoveNext
+                newFormState =
+                    moveInForm oldFormState MoveNext
             in
                 ( { model | form = newFormState }, Cmd.none )
 
-
         FormPrevButtonClicked ->
             let
-                oldFormState = model.form
+                oldFormState =
+                    model.form
 
-                newFormState = moveInForm oldFormState MovePreviouse
+                newFormState =
+                    moveInForm oldFormState MovePreviouse
             in
                 ( { model | form = newFormState }, Cmd.none )
 

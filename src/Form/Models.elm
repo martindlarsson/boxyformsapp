@@ -3,6 +3,7 @@ module Form.Models exposing (..)
 import Helpers.ListHelpers exposing (..)
 import List exposing (..)
 
+
 type alias Index =
     Int
 
@@ -53,8 +54,9 @@ type FormState
 type alias FormStepList =
     { previouseSteps : List FormStep
     , currentStep : FormStep
-    , nextSteps : List FormStep 
+    , nextSteps : List FormStep
     }
+
 
 type FormStepState
     = HasOneStep
@@ -101,25 +103,38 @@ type alias Answer =
     }
 
 
+fromJsonFormListToForm : List JsonForm -> Result String Form
+fromJsonFormListToForm jsonFormList =
+    case jsonFormList of
+        [] ->
+            Err "Inget formulär hittades"
+
+        firstForm :: formListTail ->
+            fromJsonFormToForm firstForm
+
+
 fromJsonFormToForm : JsonForm -> Result String Form
 fromJsonFormToForm jsonForm =
     let
-        maybeFormStepList = toFormStepList jsonForm.formSteps
+        maybeFormStepList =
+            toFormStepList jsonForm.formSteps
     in
         case maybeFormStepList of
-            Nothing -> Err "The form holds no form steps"
+            Nothing ->
+                Err "The form holds no form steps"
 
-            Just formStepList ->  Ok (Form jsonForm.eventId jsonForm.eventName jsonForm.orgName jsonForm.formId jsonForm.formName formStepList)
-
+            Just formStepList ->
+                Ok (Form jsonForm.eventId jsonForm.eventName jsonForm.orgName jsonForm.formId jsonForm.formName formStepList)
 
 
 toFormStepList : List FormStep -> Maybe FormStepList
 toFormStepList list =
     case list of
-        [] -> Nothing
+        [] ->
+            Nothing
 
         firstStep :: restSteps ->
-            Just (FormStepList [] firstStep restSteps )
+            Just (FormStepList [] firstStep restSteps)
 
 
 emptyAnswer : QuestionId -> Answer
@@ -142,6 +157,7 @@ findAnswer qId maybeAnswers =
             Just answer ->
                 answer
 
+
 type MoveOperation
     = MoveNext
     | MovePreviouse
@@ -155,9 +171,14 @@ moveInForm formState moveOp =
             let
                 formStepList =
                     case moveOp of
-                        MoveNext -> nextFormStep form.formSteps
-                        MovePreviouse -> previouseFormStep form.formSteps
-                        _ -> Err "Unsupported move operation"
+                        MoveNext ->
+                            nextFormStep form.formSteps
+
+                        MovePreviouse ->
+                            previouseFormStep form.formSteps
+
+                        _ ->
+                            Err "Unsupported move operation"
             in
                 case formStepList of
                     Err errMsg ->
@@ -165,7 +186,8 @@ moveInForm formState moveOp =
 
                     Ok stepList ->
                         let
-                            newForm = { form | formSteps = stepList }
+                            newForm =
+                                { form | formSteps = stepList }
                         in
                             FormLoaded newForm
 
@@ -173,11 +195,11 @@ moveInForm formState moveOp =
             ErrorLoadingForm "Error while loading form step"
 
 
-
 findFormStep : Maybe FormStepId -> List FormStep -> Maybe FormStep
 findFormStep formId formSteps =
     case formId of
-        Nothing -> Nothing
+        Nothing ->
+            Nothing
 
         Just formId ->
             formSteps
@@ -195,53 +217,61 @@ getFormStepState { previouseSteps, currentStep, nextSteps } =
     -- let
     --   _ = Debug.log "getFormStepState" ("prev: " ++ (toString (length previouseSteps)) ++ " curr: " ++ (toString currentStep) ++ " next: " ++ (toString (length nextSteps)))
     -- in
-      
-    case (previouseSteps, currentStep, nextSteps ) of
-        ( [], _ , [] ) -> HasOneStep
+    case ( previouseSteps, currentStep, nextSteps ) of
+        ( [], _, [] ) ->
+            HasOneStep
 
-        ( x :: xs , _ , [] ) -> HasPrevButNoNext
+        ( x :: xs, _, [] ) ->
+            HasPrevButNoNext
 
-        ( [] , _ , _ :: _ ) -> HasNoPrevButNext
+        ( [], _, _ :: _ ) ->
+            HasNoPrevButNext
 
-        ( _ :: _ , _ , _ :: _ ) -> HasPrevAndNext
-
+        ( _ :: _, _, _ :: _ ) ->
+            HasPrevAndNext
 
 
 nextFormStep : FormStepList -> Result String FormStepList
 nextFormStep { previouseSteps, currentStep, nextSteps } =
     let
         -- add curr last to old previouseSteps
-        newPrevSteps = previouseSteps ++ [ currentStep ]
+        newPrevSteps =
+            previouseSteps ++ [ currentStep ]
 
         -- take first from nexSteps
-        newCurrStep = head nextSteps
+        newCurrStep =
+            head nextSteps
 
         -- remove first from old nextStep
-        newNextSteps = listTail nextSteps
+        newNextSteps =
+            listTail nextSteps
     in
         case newCurrStep of
             Nothing ->
                 Err "Can not go to next beqause there are no next step."
 
             Just currStep ->
-                Ok ( FormStepList newPrevSteps currStep newNextSteps )
+                Ok (FormStepList newPrevSteps currStep newNextSteps)
 
 
 previouseFormStep : FormStepList -> Result String FormStepList
 previouseFormStep { previouseSteps, currentStep, nextSteps } =
     let
         -- remove last item from old previouseSteps
-        newPrevSteps = dropLast previouseSteps
+        newPrevSteps =
+            dropLast previouseSteps
 
         -- take last from previouseSteps
-        newCurrStep = lastInList previouseSteps
+        newCurrStep =
+            lastInList previouseSteps
 
         -- add curr to old nextStep
-        newNextSteps = [ currentStep ] ++ nextSteps
+        newNextSteps =
+            [ currentStep ] ++ nextSteps
     in
         case newCurrStep of
             Nothing ->
                 Err "Empty current step"
 
             Just currStep ->
-                Ok ( FormStepList newPrevSteps currStep newNextSteps )
+                Ok (FormStepList newPrevSteps currStep newNextSteps)

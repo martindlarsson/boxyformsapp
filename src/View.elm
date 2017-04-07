@@ -4,10 +4,8 @@ import Html exposing (Html, div, text, h1)
 import Html.Attributes exposing (style)
 import Models exposing (Model, Route(..))
 import Messages exposing (Msg(..))
-
 import Event.EventListView as EventListView exposing (..)
-import Form.FormView as FormView exposing(formView)
-
+import Form.FormView as FormView exposing (formView)
 import Material.Layout as Layout
 import Material.Color as Color
 import Material.Scheme
@@ -33,7 +31,7 @@ view model =
             , main =
                 [ div
                     [ style [ ( "padding", "1rem" ) ] ]
-                    (body model) --[ EventListView.eventListView model ]
+                    (body model)
                 , footer model
                 ]
             }
@@ -51,10 +49,11 @@ body model =
             [ EventListView.eventListView model ]
 
         FormRoute formId ->
-           [ FormView.formView model ]  --[ text ( "formId: " ++ ( toString formId) ) ]
+            [ FormView.formView model ]
 
         NotFoundRoute ->
             [ notFoundView ]
+
 
 
 -- Footer

@@ -9,7 +9,7 @@ matchers : Parser (Route -> a) a
 matchers =
     oneOf
         [ map EventListRoute top
-        , map FormRoute (s "form" </> int)
+        , map FormRoute (s "form" </> string)
         ]
 
 
@@ -23,7 +23,6 @@ parseLocation location =
             NotFoundRoute
 
 
-
-formPath : Int -> String
+formPath : String -> String
 formPath formId =
-    "#form/" ++ (toString formId)
+    "#form/" ++ formId
