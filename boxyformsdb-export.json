@@ -150,11 +150,11 @@
         }, {
           "choices" : [ {
             "choiceFee" : 800,
-            "choiceIndex" : 1,
+            "choiceIndex" : 4,
             "choiceText" : "LÃ¥ng"
           }, {
             "choiceFee" : 600,
-            "choiceIndex" : 2,
+            "choiceIndex" : 5,
             "choiceText" : "Kort"
           } ],
           "questionId" : "martinnweknkjne",
@@ -170,8 +170,8 @@
     },
     "-Kh8yfYdV1tyBVoVqdd3" : {
       "eventId" : 3,
-      "eventName" : "HovfjÃ¤llet Trail",
-      "formName" : "AnmÃ¤lan till HovfjÃ¤llet Trail",
+      "eventName" : "Hovfjället Trail",
+      "formName" : "AnmÃ¤lan till Hovfjället Trail",
       "formSteps" : [ {
         "questions" : [ {
           "questionId" : "martinqwfqwf",

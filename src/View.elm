@@ -39,7 +39,16 @@ view model =
 
 header : Model -> List (Html Msg)
 header model =
-    [ Layout.row [] [ Layout.title [] [ text "BoxyForms" ] ] ]
+    [ Layout.row
+        []
+        [ Layout.title
+            []
+            [ Html.a
+                [ Html.Attributes.href "#", style [ ( "color", "rgb(66,66,66)" ), ( "text-decoration", "none" ) ] ]
+                [ text "BoxyForms" ]
+            ]
+        ]
+    ]
 
 
 body : Model -> List (Html Msg)

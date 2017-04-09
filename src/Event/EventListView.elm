@@ -41,6 +41,6 @@ formButton eventForm mdl =
         [ Button.raised
         , Button.colored
         , Button.ripple
-        , Options.onClick (EventFormClicked eventForm.formId)
+        , Button.link ("#form/" ++ eventForm.formId)
         ]
         [ text eventForm.formName ]
