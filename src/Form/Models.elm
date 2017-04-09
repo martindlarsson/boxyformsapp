@@ -13,11 +13,11 @@ type alias FormId =
 
 
 type alias FormStepId =
-    Int
+    String
 
 
 type alias QuestionId =
-    Int
+    String
 
 
 type alias EventId =
@@ -28,7 +28,8 @@ type alias Form =
     { eventId : EventId
     , eventName : String
     , orgName : String
-    , formId : FormId
+
+    -- , formId : FormId
     , formName : String
     , formSteps : FormStepList
     }
@@ -38,7 +39,8 @@ type alias JsonForm =
     { eventId : EventId
     , eventName : String
     , orgName : String
-    , formId : FormId
+
+    -- , formId : FormId
     , formName : String
     , formSteps : List FormStep
     }
@@ -124,7 +126,7 @@ fromJsonFormToForm jsonForm =
                 Err "The form holds no form steps"
 
             Just formStepList ->
-                Ok (Form jsonForm.eventId jsonForm.eventName jsonForm.orgName jsonForm.formId jsonForm.formName formStepList)
+                Ok (Form jsonForm.eventId jsonForm.eventName jsonForm.orgName jsonForm.formName formStepList)
 
 
 toFormStepList : List FormStep -> Maybe FormStepList
@@ -156,6 +158,21 @@ findAnswer qId maybeAnswers =
 
             Just answer ->
                 answer
+
+
+updateAnswers : List Answer -> QuestionId -> String -> List Answer
+updateAnswers oldAnswers questionId answer =
+    let
+        newAnswer =
+            [ Answer questionId answer ]
+
+        keepAnswers =
+            List.filter (\answer -> answer.questionId /= questionId) oldAnswers
+
+        -- _ =
+        --     Debug.log "updateAnsers" (keepAnswers ++ newAnswer)
+    in
+        keepAnswers ++ newAnswer
 
 
 type MoveOperation

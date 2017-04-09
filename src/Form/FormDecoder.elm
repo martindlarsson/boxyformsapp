@@ -21,7 +21,6 @@ formDecoder =
         |> required "eventId" int
         |> required "eventName" string
         |> required "orgName" string
-        |> required "formId" int
         |> required "formName" string
         |> required "formSteps" (list formStepDecoder)
 
@@ -29,7 +28,7 @@ formDecoder =
 formStepDecoder : Decoder FormStep
 formStepDecoder =
     decode FormStep
-        |> required "stepId" int
+        |> required "stepId" string
         |> required "stepTitle" string
         |> required "stepIndex" int
         |> required "questions" (list questionDecoder)
@@ -39,7 +38,7 @@ questionDecoder : Decoder Question
 questionDecoder =
     decode Question
         -- Nödvändigt?
-        |> required "questionId" int
+        |> required "questionId" string
         |> required "questionText" string
         |> required "questionType" (string |> andThen questionTypeDecoder)
         |> required "questionIndex" int

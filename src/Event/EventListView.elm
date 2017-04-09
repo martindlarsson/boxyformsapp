@@ -12,10 +12,6 @@ import Material.Elevation as Elevation
 import Material.Button as Button
 
 
--- import Routing exposing (formPath)
---import Routing exposing (formPath)
-
-
 eventListView : Model -> Html Msg
 eventListView model =
     div []

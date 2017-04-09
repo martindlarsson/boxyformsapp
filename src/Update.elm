@@ -6,14 +6,8 @@ import Routing exposing (parseLocation)
 import Material
 import List exposing (head, tail, append)
 import Form.Models exposing (..)
-import Form.FormDecoder exposing (decodeForm)
-import Event.EventDecoder exposing (..)
-import Event.Query exposing (getAllEventsQueryCmd)
-import Form.Query exposing (getFormQueryCmd)
-import Firebase.Database
-import Firebase.Database.Snapshot
-import Firebase.Database.Reference
-import Task
+import Event.Query exposing (getAllEventsQueryCmd, eventsSnapToEventsList)
+import Form.Query exposing (getFormQueryCmd, formSnapToForm)
 
 
 -- UPDATE
@@ -23,19 +17,12 @@ update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         GetAllEvents ->
-            let
-                eventsRef =
-                    model.db
-                        |> Firebase.Database.ref (Just "events")
-            in
-                ( { model | route = EventListRoute }, Task.perform GotEventsMsg (Firebase.Database.Reference.once "value" eventsRef) )
+            ( { model | route = EventListRoute }, getAllEventsQueryCmd model )
 
         GotEventsMsg eventsSnapshot ->
             let
                 eventListResult =
-                    eventsSnapshot
-                        |> Firebase.Database.Snapshot.value
-                        |> decodeEvents
+                    eventsSnapToEventsList eventsSnapshot
             in
                 case eventListResult of
                     Ok eventList ->
@@ -44,7 +31,7 @@ update msg model =
                     Err errorMsg ->
                         let
                             _ =
-                                Debug.log "" errorMsg
+                                Debug.log "Error GotEventMsg" errorMsg
                         in
                             ( model, Cmd.none )
 
@@ -54,9 +41,7 @@ update msg model =
         GotFormMsg formSnapshot ->
             let
                 formResult =
-                    formSnapshot
-                        |> Firebase.Database.Snapshot.value
-                        |> decodeForm
+                    formSnapToForm formSnapshot
 
                 -- _ =
                 --     Debug.log "GotFormMsg" formResult
@@ -120,9 +105,10 @@ update msg model =
 
         SetAnswer questionId answer ->
             let
-                -- _ = Debug.log "SetAnswer" ((toString questionId) ++ ", svar: " ++ answer )
+                -- _ =
+                --     Debug.log "SetAnswer" ((toString questionId) ++ ", svar: " ++ answer)
                 newAnsers =
-                    updateAnswers model questionId answer
+                    updateAnswers model.answers questionId answer
             in
                 ( { model | answers = newAnsers }, Cmd.none )
 
@@ -152,21 +138,3 @@ update msg model =
 
         NoOp ->
             ( model, Cmd.none )
-
-
-updateAnswers : Model -> QuestionId -> String -> List Answer
-updateAnswers model questionId answer =
-    let
-        newAnswer =
-            [ Answer questionId answer ]
-
-        oldAnswers =
-            model.answers
-
-        keepAnswers =
-            List.filter (\answer -> answer.questionId /= questionId) oldAnswers
-
-        _ =
-            Debug.log "updateAnsers" (keepAnswers ++ newAnswer)
-    in
-        keepAnswers ++ newAnswer
