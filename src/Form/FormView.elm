@@ -1,6 +1,7 @@
 module Form.FormView exposing (..)
 
 import Html exposing (Html, div, text, h1, h2, h3, select, option, label, p)
+import Html.Attributes exposing (class)
 import Models exposing (Model)
 import Form.Models as Model exposing (..)
 import Messages exposing (Msg(..))
@@ -23,13 +24,13 @@ formView : Model -> Html Msg
 formView model =
     case model.form of
         NoForm ->
-            text "Inget formulär har valts"
+            grid [] [ cell [ size All 6 ] [ text "Inget formulär har valts" ] ]
 
         LoadingForm ->
-            text "Laddar in formuläret, snart så..."
+            grid [] [ cell [ size All 6 ] [ text "Laddar in formuläret, snart så..." ] ]
 
         ErrorLoadingForm errMsg ->
-            text ("Fel vid laddning av formulär. " ++ errMsg)
+            grid [] [ cell [ size All 6 ] [ text ("Fel vid laddning av formulär. " ++ errMsg) ] ]
 
         FormLoaded form ->
             let
@@ -38,10 +39,14 @@ formView model =
 
                 currentStep =
                     getCurrentStep form.formSteps
+
+                _ =
+                    Debug.log "loading formView, answers" model.answers
             in
-                div []
-                    [ formStepView currentStep model.answers model.mdl
-                    , grid [] (formButtonView model formStepState)
+                div [ class "mdl-grid" ]
+                    [ div [ class "mdl-layout-spacer" ] []
+                    , div [ class "mdl-cell mdl-cell--8-col" ] [ grid [] ((formStepView currentStep model.answers model.mdl) ++ (formButtonView model formStepState)) ]
+                    , div [ class "mdl-layout-spacer" ] []
                     ]
 
 
@@ -52,16 +57,18 @@ formButtonView model formStepState =
             [ cell [ size All 12 ] [ payButton model ] ]
 
         HasPrevButNoNext ->
-            [ cell [ size All 6 ] [ prevButton model ]
-            , cell [ size All 6 ] [ payButton model ]
+            [ cell [ size All 11 ] [ prevButton model ]
+            , cell [ size All 1 ] [ payButton model ]
             ]
 
         HasNoPrevButNext ->
-            [ cell [ size All 12 ] [ nextButton model ] ]
+            [ cell [ size All 11 ] []
+            , cell [ size All 1 ] [ nextButton model ]
+            ]
 
         HasPrevAndNext ->
-            [ cell [ size All 6 ] [ prevButton model ]
-            , cell [ size All 6 ] [ nextButton model ]
+            [ cell [ size All 11 ] [ prevButton model ]
+            , cell [ size All 1 ] [ nextButton model ]
             ]
 
 
@@ -105,21 +112,24 @@ payButton model =
         [ text "Betala" ]
 
 
-formStepView : FormStep -> List Answer -> Material.Model -> Html Msg
+formStepView : FormStep -> List Answer -> Material.Model -> List (Cell Msg)
 formStepView formStep answers mdl =
     let
         questionViews =
-            List.map (\question -> div [] [ (questionView question (findAnswer question.questionId answers) mdl) ]) formStep.questions
+            List.map (\question -> cell [ size All 12 ] [ (questionView question (findAnswer question.questionId answers) mdl) ]) formStep.questions
     in
-        div []
-            ([ h3 [] [ text formStep.stepTitle ] ] ++ questionViews)
+        [ cell [ size All 12 ] [ h3 [] [ text formStep.stepTitle ] ] ] ++ questionViews
 
 
 questionView : Question -> Answer -> Material.Model -> Html Msg
 questionView question answer mdl =
     let
         questionModel =
-            QuestionModel question answer mdl
+            let
+                _ =
+                    Debug.log "questionView" [ (toString question.questionId), (toString answer.questionId), answer.answer ]
+            in
+                QuestionModel question answer mdl
 
         questionText =
             label [] [ text question.questionText ]

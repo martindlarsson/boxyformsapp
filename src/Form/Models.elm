@@ -157,6 +157,10 @@ findAnswer qId maybeAnswers =
                 emptyAnswer qId
 
             Just answer ->
+                -- let
+                -- _ =
+                --     Debug.log "findAnswer" ("qId: " ++ qId)
+                -- in
                 answer
 
 
