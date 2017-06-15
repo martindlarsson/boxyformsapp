@@ -157,11 +157,11 @@ findAnswer qId maybeAnswers =
                 emptyAnswer qId
 
             Just answer ->
-                -- let
-                -- _ =
-                --     Debug.log "findAnswer" ("qId: " ++ qId)
-                -- in
-                answer
+                let
+                    _ =
+                        Debug.log "found answer" ("qId: " ++ qId ++ " answerId: " ++ answer.questionId ++ " answer: " ++ answer.answer)
+                in
+                    answer
 
 
 updateAnswers : List Answer -> QuestionId -> String -> List Answer

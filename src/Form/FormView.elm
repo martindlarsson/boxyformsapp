@@ -1,7 +1,7 @@
 module Form.FormView exposing (..)
 
 import Html exposing (Html, div, text, h1, h2, h3, select, option, label, p)
-import Html.Attributes exposing (class)
+import Html.Attributes exposing (class, style)
 import Models exposing (Model)
 import Form.Models as Model exposing (..)
 import Messages exposing (Msg(..))
@@ -57,18 +57,16 @@ formButtonView model formStepState =
             [ cell [ size All 12 ] [ payButton model ] ]
 
         HasPrevButNoNext ->
-            [ cell [ size All 11 ] [ prevButton model ]
-            , cell [ size All 1 ] [ payButton model ]
+            [ cell [ size All 10 ] [ prevButton model ]
+            , cell [ size All 2 ] [ payButton model ]
             ]
 
         HasNoPrevButNext ->
-            [ cell [ size All 11 ] []
-            , cell [ size All 1 ] [ nextButton model ]
-            ]
+            [ cell [ size All 12 ] [ nextButton model ] ]
 
         HasPrevAndNext ->
-            [ cell [ size All 11 ] [ prevButton model ]
-            , cell [ size All 1 ] [ nextButton model ]
+            [ cell [ size All 10 ] [ prevButton model ]
+            , cell [ size All 2 ] [ div [ style [ ( "align", "right" ) ] ] [ nextButton model ] ]
             ]
 
 
@@ -125,11 +123,11 @@ questionView : Question -> Answer -> Material.Model -> Html Msg
 questionView question answer mdl =
     let
         questionModel =
-            let
-                _ =
-                    Debug.log "questionView" [ (toString question.questionId), (toString answer.questionId), answer.answer ]
-            in
-                QuestionModel question answer mdl
+            -- let
+            --     _ =
+            --         Debug.log "questionView" [ (toString question.questionId), (toString answer.questionId), answer.answer ]
+            -- in
+            QuestionModel question answer mdl
 
         questionText =
             label [] [ text question.questionText ]

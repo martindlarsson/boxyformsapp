@@ -32,7 +32,8 @@ view model =
                 [ div
                     [ style [ ( "padding", "1rem" ) ] ]
                     (body model)
-                , footer model
+
+                --, footer model
                 ]
             }
 
