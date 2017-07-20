@@ -1,6 +1,5 @@
 module Messages exposing (Msg(..))
 
-import Material
 import Navigation exposing (Location)
 import Firebase.Database.Types
 import Form.Models exposing (QuestionId)
@@ -10,8 +9,7 @@ import Form.Models exposing (QuestionId)
 
 
 type Msg
-    = Mdl (Material.Msg Msg)
-    | EventFormClicked String
+    = EventFormClicked String
     | GetAllEvents -- Nödvändig?
     | GotEventsMsg Firebase.Database.Types.Snapshot -- (List Event)
     | OnLocationChange Location

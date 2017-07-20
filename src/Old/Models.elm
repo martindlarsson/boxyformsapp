@@ -1,6 +1,5 @@
 module Models exposing (Model, initialModel, Route(..))
 
-import Material
 import Event.Models exposing (Event)
 import Form.Models exposing (..)
 import Firebase
@@ -18,7 +17,6 @@ type alias Model =
     , route : Route
     , form : FormState
     , answers : List Answer
-    , mdl : Material.Model -- Boilerplate: model store for any and all Mdl components you use.
     }
 
 
@@ -43,7 +41,6 @@ initialModel route =
         , route = route
         , form = NoForm
         , answers = []
-        , mdl = Material.model
         }
 
 

@@ -3,7 +3,6 @@ module Update exposing (..)
 import Messages exposing (Msg(..))
 import Models exposing (Model, Route(..))
 import Routing exposing (parseLocation)
-import Material
 import List exposing (head, tail, append)
 import Form.Models exposing (..)
 import Event.Query exposing (getAllEventsQueryCmd, eventsSnapToEventsList)
@@ -131,10 +130,6 @@ update msg model =
                     moveInForm oldFormState MovePreviouse
             in
                 ( { model | form = newFormState }, Cmd.none )
-
-        -- Boilerplate: Mdl action handler.
-        Mdl subMsg ->
-            Material.update Mdl subMsg model
 
         NoOp ->
             ( model, Cmd.none )
