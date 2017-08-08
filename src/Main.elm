@@ -8,13 +8,17 @@ import Views.PageView as PageView exposing (ActivePage)
 import Page.HomePage as HomePage
 import Page.NotFound as NotFound
 import Page.ErrorPage as ErrorPage exposing (PageLoadError)
-import Page.Register as Register
+import Page.Login as LoginPage exposing (initialModel)
+import Page.NewForm as NewForm
 import Page.MyForms as MyForms
 import Data.Session as Session exposing (Session)
-import Data.User as User exposing (User)
+import Data.User as User exposing (User, decoder)
 import Data.Form as Form exposing (..)
 import Json.Decode as Decode exposing (Value, decodeValue)
 import Ports as Ports exposing (..)
+
+
+-- import Page.Register as Register
 
 
 type Page
@@ -22,8 +26,9 @@ type Page
     | NotFound
     | Errored PageLoadError
     | Home HomePage.Model
-    | Register Register.Model
+    | NewForm NewForm.Model
     | MyForms MyForms.Model
+    | Login LoginPage.Model
 
 
 type PageState
@@ -102,15 +107,19 @@ viewPage session isLoading page =
                     |> frame PageView.Home
                     |> Html.map HomeMsg
 
-            Register subModel ->
-                Register.view session subModel
+            NewForm subModel ->
+                NewForm.view session subModel
                     |> frame PageView.Other
-                    |> Html.map RegisterMsg
+                    |> Html.map NewFormMsg
 
             MyForms subModel ->
                 MyForms.view session subModel
                     |> frame PageView.Other
                     |> Html.map MyFormsMsg
+
+            Login subModel ->
+                LoginPage.view session subModel
+                    |> frame PageView.Other
 
 
 getPage : PageState -> Page
@@ -131,17 +140,26 @@ type Msg
     = SetRoute (Maybe Route)
     | HomeLoaded (Result String (List Form))
     | HomeMsg HomePage.Msg
-    | RegisterMsg Register.Msg
     | MyFormsMsg MyForms.Msg
-    | SubscriptionEvent HomePage.Msg
+    | ReceiveUser Value
+    | NewFormMsg NewForm.Msg
 
 
 setRoute : Maybe Route -> Model -> ( Model, Cmd Msg )
 setRoute maybeRoute model =
     let
+        fromPage =
+            getPage model.pageState
+
         transition cmd =
-            { model | pageState = TransitioningFrom (getPage model.pageState) }
-                => cmd
+            case fromPage of
+                Login _ ->
+                    { model | pageState = TransitioningFrom fromPage }
+                        => Cmd.batch [ Ports.deleteFBUI (), cmd ]
+
+                _ ->
+                    { model | pageState = TransitioningFrom fromPage }
+                        => cmd
 
         errored =
             pageErrored model
@@ -153,11 +171,17 @@ setRoute maybeRoute model =
             Just Route.Home ->
                 transition (HomePage.init model.session)
 
-            Just Route.Register ->
-                { model | pageState = Loaded (Register Register.initialModel) } => Cmd.none
+            Just Route.NewForm ->
+                { model | pageState = Loaded (NewForm NewForm.initialModel) } => Cmd.none
 
             Just Route.MyForms ->
-                { model | pageState = Loaded (MyForms MyForms.initialModel) } => Cmd.none
+                { model | pageState = Loaded (MyForms MyForms.initialModel) } => Ports.deleteFBUI ()
+
+            Just Route.Login ->
+                { model | pageState = Loaded (Login LoginPage.initialModel) } => Ports.startAuthUI ()
+
+            Just Route.Logout ->
+                { model | session = { user = Nothing } } => Ports.logOut ()
 
             Just _ ->
                 transition (HomePage.init model.session)
@@ -197,11 +221,6 @@ updatePage page msg model =
 
         errored =
             pageErrored model
-
-        -- _ =
-        --     Debug.log "Update page" page
-        -- _ =
-        --     Debug.log "Update msg" msg
     in
         case ( msg, page ) of
             ( SetRoute route, _ ) ->
@@ -214,34 +233,17 @@ updatePage page msg model =
                 { model | pageState = Loaded (Errored (toPageLoadError PageView.Home error)) } => Cmd.none
 
             ( HomeMsg subMsg, Home subModel ) ->
-                let
-                    _ =
-                        Debug.log "Update HomeMsg" subMsg
-                in
-                    toPage Home HomeMsg (HomePage.update session) subMsg subModel
+                toPage Home HomeMsg (HomePage.update session) subMsg subModel
 
-            ( RegisterMsg subMsg, Register subModel ) ->
-                let
-                    _ =
-                        Debug.log "Update Register" page
+            ( NewFormMsg subMsg, NewForm subModel ) ->
+                toPage NewForm NewFormMsg (NewForm.update session) subMsg subModel
 
-                    ( ( pageModel, cmd ), msgFromPage ) =
-                        Register.update subMsg subModel
-
-                    newModel =
-                        case msgFromPage of
-                            Register.NoOp ->
-                                model
-
-                            Register.SetUser user ->
-                                let
-                                    session =
-                                        model.session
-                                in
-                                    { model | session = { user = Just user } }
-                in
-                    { newModel | pageState = Loaded (Register pageModel) }
-                        => Cmd.map RegisterMsg cmd
+            -- En användare har loggat in eller skapats
+            ( ReceiveUser value, _ ) ->
+                value
+                    |> Decode.decodeValue User.decoder
+                    |> Result.map (\user -> { model | session = { user = Just user } } ! [])
+                    |> Result.withDefault (model ! [])
 
             ( _, NotFound ) ->
                 let
@@ -273,6 +275,7 @@ subscriptions model =
     in
         Sub.batch
             [ Sub.map HomeLoaded getAllFormsSub
+            , Ports.receiveUser ReceiveUser
             ]
 
 

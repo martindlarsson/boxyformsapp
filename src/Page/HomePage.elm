@@ -4,7 +4,7 @@ module Page.HomePage exposing (Model, Msg(..), update, view, init)
 -}
 
 import Html exposing (..)
-import Html.Attributes exposing (attribute, class, classList, href, id, placeholder)
+import Html.Attributes exposing (attribute, class, classList, href, id, placeholder, style)
 import Data.Form as Form exposing (Form)
 import Ports exposing (..)
 import Data.Session as Session exposing (Session)
@@ -37,16 +37,14 @@ init session =
 view : Session -> Model -> Html Msg
 view session model =
     div [ class "home-page" ]
-        [ div [ class "container mt-4" ]
-            [ table [ class "table" ]
-                [ thead [ class "thead-default" ]
-                    [ th [] [ text "Formulär" ]
-                    , th [] [ text "Arrangör" ]
-                    , th [] [ text "Öppen till" ]
-                    ]
-                , tbody []
-                    (List.map (\form -> formRowView form) model.forms)
+        [ table [ class "table" ]
+            [ thead [ class "thead-default" ]
+                [ th [] [ text "Formulär" ]
+                , th [] [ text "Arrangör" ]
+                , th [] [ text "Öppen till" ]
                 ]
+            , tbody []
+                (List.map (\form -> formRowView form) model.forms)
             ]
         ]
 
@@ -54,7 +52,7 @@ view session model =
 formRowView : Form -> Html Msg
 formRowView form =
     tr []
-        [ td [ attribute "scope" "row" ] [ text form.name ]
+        [ td [ attribute "scope" "row" ] [ a [ href ("/#/form/" ++ form.id) ] [ text form.name ] ]
         , td [] [ text form.orgName ]
         , td [] [ text form.closeDate ]
         ]
@@ -72,36 +70,21 @@ type Msg
 
 update : Session -> Msg -> Model -> ( Model, Cmd Msg )
 update session msg model =
-    let
-        _ =
-            Debug.log "Home page update" msg
+    case msg of
+        SelectForm ->
+            ( model, Cmd.none )
 
-        _ =
-            Debug.log "Home page update" model
-    in
-        case msg of
-            SelectForm ->
-                ( model, Cmd.none )
+        GotAllPublicFormsMsg forms ->
+            ( model, Cmd.none )
 
-            GotAllPublicFormsMsg forms ->
-                let
-                    _ =
-                        Debug.log "GotAllPublicFormsMsg" forms
-                in
+        GotFormMsg result ->
+            case result of
+                Ok form ->
                     ( model, Cmd.none )
 
-            GotFormMsg result ->
-                case result of
-                    Ok form ->
-                        let
-                            _ =
-                                Debug.log "GotFormMsg OK" form
-                        in
-                            ( model, Cmd.none )
-
-                    Err errorMsg ->
-                        let
-                            _ =
-                                Debug.log "GotFormMsg Error" errorMsg
-                        in
-                            ( model, Cmd.none )
+                Err errorMsg ->
+                    let
+                        _ =
+                            Debug.log "GotFormMsg Error" errorMsg
+                    in
+                        ( model, Cmd.none )

@@ -9,14 +9,17 @@ var mountNode = document.getElementById('main');
 // Initialize Firebase
 firebase.initializeApp(require('../firebase.config'));
 var database = firebase.database();
-var formRef = database.ref('forms/');
+var formsRef = database.ref('forms/');
 
 // .embed() can take an optional second argument. This would be an object describing the data we need to start a program, i.e. a userID or some token
 var app = Elm.Main.embed(mountNode);
 
+// The FirebaseUI Widget.
+var ui = null;
+
 // Get all forms from Firebase
 app.ports.getAllPublicForms.subscribe(function () {
-    formRef.once('value').then(function (snapshot) {
+    formsRef.once('value').then(function (snapshot) {
         var list = getAsList(snapshot.val());
         app.ports.gotAllPublicForms.send(list);
     })
@@ -24,7 +27,8 @@ app.ports.getAllPublicForms.subscribe(function () {
 
 // // Get forms from Firebase
 app.ports.getForm.subscribe(function (formId) {
-    formRef.orderByChild("formId").equalTo(formId).limitToFirst(1).once('value').then(function (snapshot) {
+    var formRef = database.ref('forms/' + formIf);
+    formRef.limitToFirst(1).once('value').then(function (snapshot) {
         var form = getFirstObject(snapshot.val());
         app.ports.gotForm.send(form);
     })
@@ -32,6 +36,7 @@ app.ports.getForm.subscribe(function (formId) {
 
 function getAsList(resultObject) {
     if (resultObject instanceof Array) {
+        // TODO, stoppa in index som id i objektet
         return resultObject
     }
     else if (resultObject instanceof Object) {
@@ -59,3 +64,79 @@ function getFirstObject(resultObject) {
         }
     }
 }
+
+app.ports.logOut.subscribe(() => {
+  firebase.auth().signOut()
+})
+
+
+app.ports.startAuthUI.subscribe(() => {
+    // console.log("Kör startAuthUI")
+
+    // FirebaseUI config.
+        var uiConfig = {
+            signInSuccessUrl: '/#/myforms', // TODO, ta in parameter för detta
+            signInOptions: [
+                {
+                    provider: firebase.auth.GoogleAuthProvider.PROVIDER_ID,
+                    scopes: [
+                        'https://www.googleapis.com/auth/plus.login'
+                    ],
+                    customParameters: {
+                        // Forces account selection even when one account
+                        // is available.
+                        prompt: 'select_account'
+                    }
+                },
+                firebase.auth.EmailAuthProvider.PROVIDER_ID // Other providers don't need to be given as object.
+            ],
+            // Terms of service url.
+            tosUrl: '<your-tos-url>'
+        };
+
+    if (ui) {
+        // console.log("Kör startAuthUI show");
+        ui.reset();
+    } else {
+        // console.log("Kör startAuthUI skapa nytt")
+        // Initialize the FirebaseUI Widget using Firebase.
+        ui = new firebaseui.auth.AuthUI(firebase.auth());
+    }
+
+    requestAnimationFrame(function(){
+        // The start method will wait until the DOM is loaded.
+        ui.start('#firebaseui-auth-container', uiConfig);
+        });
+})
+
+firebase.auth().onAuthStateChanged(function(user) {
+          if (user) {
+
+            var boxyUser = {
+                "id" : user.uid
+                , "email" : user.email
+                , "displayName" : user.displayName
+                , "imageUrl" : user.photoURL
+                , "createdAt" : "?"
+                , "updatedAt" : "?"
+            }
+            // console.log("boxy user:", boxyUser);
+
+            app.ports.receiveUser.send(boxyUser)
+          } else {
+            // User is signed in.
+            console.log("User signed out")
+            // User is signed out.
+            // TODO port for when the user is signed out
+          }
+        }, function(error) {
+          console.log(error);
+        });
+
+
+// Port that deletes the firebaseui widget
+app.ports.deleteFBUI.subscribe(() => {
+    if (ui) {
+        $(".firebaseui-container").hide();
+    } else { console.log("No UI to delete.") }
+})

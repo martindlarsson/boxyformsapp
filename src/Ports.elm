@@ -27,3 +27,27 @@ port getForm : FormId -> Cmd msg
 
 
 port gotForm : (Json.Decode.Value -> msg) -> Sub msg
+
+
+
+-- Authentication
+-- Outbound
+
+
+port requestAuthentication : String -> Cmd msg
+
+
+port logOut : () -> Cmd msg
+
+
+port startAuthUI : () -> Cmd msg
+
+
+port deleteFBUI : () -> Cmd msg
+
+
+
+-- Inbound
+
+
+port receiveUser : (Value -> msg) -> Sub msg

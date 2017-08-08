@@ -4,10 +4,9 @@ import Html exposing (Attribute)
 import Html.Attributes as Attr
 import Navigation exposing (Location)
 import UrlParser as Url exposing ((</>), Parser, oneOf, parseHash, s, string)
+import Data.User as User exposing (..)
 
 
--- import Data.Article as Article
--- import Data.User as User exposing (Username)
 -- ROUTING --
 
 
@@ -15,9 +14,14 @@ type Route
     = Home
     | Login
     | Logout
-    | Register
-    | Settings
     | MyForms
+    | Profile String
+    | NewForm
+
+
+
+-- | Register
+-- | Settings
 
 
 route : Parser (Route -> a) a
@@ -26,8 +30,9 @@ route =
         [ Url.map Home (s "")
         , Url.map Login (s "login")
         , Url.map Logout (s "logout")
-        , Url.map Register (s "register")
         , Url.map MyForms (s "myforms")
+        , Url.map NewForm (s "newform")
+        , Url.map Profile (s "profile" </> User.usernameParser)
         ]
 
 
@@ -49,14 +54,14 @@ routeToString page =
                 Logout ->
                     [ "logout" ]
 
-                Register ->
-                    [ "register" ]
-
-                Settings ->
-                    [ "settings" ]
-
                 MyForms ->
                     [ "myforms" ]
+
+                NewForm ->
+                    [ "newform" ]
+
+                Profile username ->
+                    [ "profile", username ]
     in
         "#/" ++ String.join "/" pieces
 

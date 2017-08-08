@@ -7,12 +7,6 @@ import Html exposing (..)
 import Html.Attributes exposing (..)
 
 
--- import Data.User as User exposing (User)
--- import Html.Events exposing (..)
--- import Json.Decode as Decode exposing (Decoder, decodeString, field, string)
--- import Json.Decode.Pipeline as Pipeline exposing (decode, optional)
--- import Request.User exposing (storeSession)
--- import Route exposing (Route)
 -- MODEL --
 
 
@@ -35,9 +29,8 @@ initialModel =
 
 view : Session -> Model -> Html Msg
 view session model =
-    div [ class "container mt-4" ]
-        [ viewCreateNew
-        , table [ class "table" ]
+    div [ class "container" ]
+        [ table [ class "table" ]
             [ thead [ class "thead-default" ]
                 [ th [] [ text "Namn" ]
                 , th [] [ text "Publikt" ]
@@ -55,13 +48,6 @@ view session model =
                     ]
                 ]
             ]
-        ]
-
-
-viewCreateNew : Html Msg
-viewCreateNew =
-    div [ class "form-group" ]
-        [ button [ class "btn btn-secondary" ] [ text "Nytt formulär" ]
         ]
 
 

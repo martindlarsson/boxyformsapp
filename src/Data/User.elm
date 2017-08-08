@@ -1,25 +1,18 @@
-module Data.User exposing (User, Username, decoder, encode, usernameDecoder, usernameParser, usernameToHtml, usernameToString)
+module Data.User exposing (User, decoder, encode, usernameParser)
 
--- import Data.AuthToken as AuthToken exposing (AuthToken)
--- import Data.UserPhoto as UserPhoto exposing (UserPhoto)
-
-import Html exposing (Html)
 import Json.Decode as Decode exposing (Decoder)
 import Json.Decode.Pipeline as Pipeline exposing (decode, required)
 import Json.Encode as Encode exposing (Value)
 import Json.Encode.Extra as EncodeExtra
-import UrlParser
 import Util exposing ((=>))
+import UrlParser
 
 
 type alias User =
-    { email : String
-
-    -- , token : AuthToken
-    , username : Username
-    , bio : Maybe String
-
-    -- , image : UserPhoto
+    { id : String
+    , email : String
+    , displayName : String
+    , imageUrl : Maybe String
     , createdAt : String
     , updatedAt : String
     }
@@ -32,11 +25,10 @@ type alias User =
 decoder : Decoder User
 decoder =
     decode User
+        |> required "id" Decode.string
         |> required "email" Decode.string
-        -- |> required "token" AuthToken.decoder
-        |> required "username" usernameDecoder
-        |> required "bio" (Decode.nullable Decode.string)
-        -- |> required "image" UserPhoto.decoder
+        |> required "displayName" Decode.string
+        |> required "imageUrl" (Decode.nullable Decode.string)
         |> required "createdAt" Decode.string
         |> required "updatedAt" Decode.string
 
@@ -44,46 +36,19 @@ decoder =
 encode : User -> Value
 encode user =
     Encode.object
-        [ "email" => Encode.string user.email
-
-        -- , "token" => AuthToken.encode user.token
-        , "username" => encodeUsername user.username
-        , "bio" => EncodeExtra.maybe Encode.string user.bio
-
-        -- , "image" => UserPhoto.encode user.image
+        [ "id" => Encode.string user.id
+        , "email" => Encode.string user.email
+        , "displayName" => Encode.string user.displayName
+        , "imageUrl" => EncodeExtra.maybe Encode.string user.imageUrl
         , "createdAt" => Encode.string user.createdAt
         , "updatedAt" => Encode.string user.updatedAt
         ]
-
-
-
--- IDENTIFIERS --
 
 
 type Username
     = Username String
 
 
-usernameToString : Username -> String
-usernameToString (Username username) =
-    username
-
-
-usernameParser : UrlParser.Parser (Username -> a) a
+usernameParser : UrlParser.Parser (String -> a) a
 usernameParser =
-    UrlParser.custom "USERNAME" (Ok << Username)
-
-
-usernameDecoder : Decoder Username
-usernameDecoder =
-    Decode.map Username Decode.string
-
-
-encodeUsername : Username -> Value
-encodeUsername (Username username) =
-    Encode.string username
-
-
-usernameToHtml : Username -> Html msg
-usernameToHtml (Username username) =
-    Html.text username
+    UrlParser.custom "USERNAME" Ok
