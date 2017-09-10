@@ -1,4 +1,4 @@
-module Page.NewForm exposing (view, initialModel, Model, Msg, update)
+module Page.NewForm exposing (view, initialModel, Model, Msg, update, init)
 
 import Html exposing (..)
 import Html.Attributes exposing (..)
@@ -6,6 +6,12 @@ import Html.Events exposing (..)
 import Data.Form as Form exposing (Form)
 import Data.Session as Session exposing (Session)
 import Views.Form as FormViews
+import Date exposing (Date)
+import Date.Extra.Config.Config_en_us exposing (config)
+import Date.Extra.Format
+import DateParser
+import DateTimePicker
+import DateTimePicker.Config exposing (Config, DatePickerConfig, TimePickerConfig, defaultDatePickerConfig, defaultDateTimeI18n, defaultDateTimePickerConfig, defaultTimePickerConfig)
 
 
 -- MODEL --
@@ -14,7 +20,22 @@ import Views.Form as FormViews
 type alias Model =
     { newForm : Form
     , errors : List String
+    , dateOpen : Maybe Date
+    , dateOpenPickerState : DateTimePicker.State
+    , dateClose : Maybe Date
+    , dateClosePickerState : DateTimePicker.State
     }
+
+
+digitalDateOpenTimePickerConfig : Config (DatePickerConfig TimePickerConfig) Msg
+digitalDateOpenTimePickerConfig =
+    let
+        defaultDateTimeConfig =
+            defaultDateTimePickerConfig DateOpenChanged
+    in
+        { defaultDateTimeConfig
+            | timePickerType = DateTimePicker.Config.Digital
+        }
 
 
 initialModel : Model
@@ -31,7 +52,19 @@ initialModel =
         , orgId = ""
         }
     , errors = []
+    , dateOpen = Nothing
+    , dateOpenPickerState = DateTimePicker.initialState
+    , dateClose = Nothing
+    , dateClosePickerState = DateTimePicker.initialState
     }
+
+
+init : Session -> Cmd Msg
+init session =
+    Cmd.batch
+        [ DateTimePicker.initialCmd DateOpenChanged DateTimePicker.initialState
+        , DateTimePicker.initialCmd DateCloseChanged DateTimePicker.initialState
+        ]
 
 
 
@@ -67,18 +100,22 @@ editFormView form =
             , onInput (OnInput Description)
             ]
             []
-        , FormViews.input
+        , label [] [ text "Startdatum" ]
+
+        -- , div [ class "form-control" ]
+        --     [ div [ id "datepicker", class "date", onInput (OnInput OpenDate) ] []
+        --     ]
+        , FormViews.dateTimePicker
             [ class "form-control-lg"
             , placeholder "Datum när formuläret blir tillgängligt"
             , onInput (OnInput OpenDate)
             ]
-            []
-        , FormViews.input
-            [ class "form-control-lg"
-            , placeholder "Datum när formuläret stänger"
-            , onInput (OnInput CloseDate)
-            ]
-            []
+
+        -- , FormViews.dateTimePicker
+        --     [ class "form-control-lg"
+        --     , placeholder "Datum när formuläret stänger"
+        --     , onInput (OnInput CloseDate)
+        --     ]
         , FormViews.input
             [ class "form-control-lg"
             , placeholder "Publikt"
@@ -109,9 +146,20 @@ type InputField
     | ImgURL
 
 
+
+-- Used to identify which date time picker is calling
+
+
+type DateTimePickerInstance
+    = DateClosePicker
+    | DateOpenPicker
+
+
 type Msg
     = SubmitForm
     | OnInput InputField String
+    | DateOpenChanged DateTimePicker.State (Maybe Date)
+    | DateCloseChanged DateTimePicker.State (Maybe Date)
 
 
 update : Session -> Msg -> Model -> ( Model, Cmd Msg )
@@ -148,3 +196,9 @@ update session msg model =
 
                         ImgURL ->
                             ( { model | newForm = { oldForm | imgUrl = inputString } }, Cmd.none )
+
+            DateOpenChanged pickerState value ->
+                ( model, Cmd.none )
+
+            DateCloseChanged pickerState value ->
+                ( model, Cmd.none )

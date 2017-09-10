@@ -140,3 +140,13 @@ app.ports.deleteFBUI.subscribe(() => {
         $(".firebaseui-container").hide();
     } else { console.log("No UI to delete.") }
 })
+
+app.ports.addDateTimePicker.subscribe(() => {
+    $( ".date" ).each(function() {
+        $( this ).datetimepicker({
+                    locale: 'sv',
+                inline: true,
+                sideBySide: true
+                });
+        });
+})

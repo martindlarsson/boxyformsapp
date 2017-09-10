@@ -2,7 +2,6 @@ module Page.Login exposing (Model, initialModel, view)
 
 import Html exposing (..)
 import Html.Attributes exposing (class, id)
-import Ports exposing (..)
 import Data.Session as Session exposing (Session)
 
 

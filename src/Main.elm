@@ -124,12 +124,16 @@ viewPage session isLoading page =
 
 getPage : PageState -> Page
 getPage pageState =
-    case pageState of
-        Loaded page ->
-            page
+    let
+        _ =
+            Debug.log "getPage" pageState
+    in
+        case pageState of
+            Loaded page ->
+                page
 
-        TransitioningFrom page ->
-            page
+            TransitioningFrom page ->
+                page
 
 
 
@@ -172,8 +176,9 @@ setRoute maybeRoute model =
                 transition (HomePage.init model.session)
 
             Just Route.NewForm ->
-                { model | pageState = Loaded (NewForm NewForm.initialModel) } => Cmd.none
+                transition (Cmd.map NewFormMsg (NewForm.init model.session))
 
+            -- { model | pageState = Loaded (NewForm NewForm.initialModel) } => (NewForm.init model.session)
             Just Route.MyForms ->
                 { model | pageState = Loaded (MyForms MyForms.initialModel) } => Ports.deleteFBUI ()
 
@@ -238,6 +243,9 @@ updatePage page msg model =
             ( NewFormMsg subMsg, NewForm subModel ) ->
                 toPage NewForm NewFormMsg (NewForm.update session) subMsg subModel
 
+            ( NewFormMsg subMsg, _ ) ->
+                toPage NewForm NewFormMsg (NewForm.update session) subMsg NewForm.initialModel
+
             -- En användare har loggat in eller skapats
             ( ReceiveUser value, _ ) ->
                 value
@@ -257,7 +265,10 @@ updatePage page msg model =
             ( _, _ ) ->
                 let
                     _ =
-                        Debug.log "SetRoute" "_,_"
+                        Debug.log "SetRoute _,_ page" page
+
+                    _ =
+                        Debug.log "SetRoute _,_ msg" msg
                 in
                     -- Disregard incoming messages that arrived for the wrong page
                     model => Cmd.none
