@@ -124,16 +124,16 @@ viewPage session isLoading page =
 
 getPage : PageState -> Page
 getPage pageState =
-    let
-        _ =
-            Debug.log "getPage" pageState
-    in
-        case pageState of
-            Loaded page ->
-                page
+    -- let
+    --     _ =
+    --         Debug.log "getPage" pageState
+    -- in
+    case pageState of
+        Loaded page ->
+            page
 
-            TransitioningFrom page ->
-                page
+        TransitioningFrom page ->
+            page
 
 
 
