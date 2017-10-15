@@ -141,12 +141,12 @@ app.ports.deleteFBUI.subscribe(() => {
     } else { console.log("No UI to delete.") }
 })
 
-app.ports.addDateTimePicker.subscribe(() => {
-    $( ".date" ).each(function() {
-        $( this ).datetimepicker({
-                    locale: 'sv',
-                inline: true,
-                sideBySide: true
-                });
-        });
-})
+// app.ports.addDateTimePicker.subscribe(() => {
+//     $( ".date" ).each(function() {
+//         $( this ).datetimepicker({
+//                     locale: 'sv',
+//                 inline: true,
+//                 sideBySide: true
+//                 });
+//         });
+// })

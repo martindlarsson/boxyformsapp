@@ -5,15 +5,8 @@ import Data.Form exposing (Form, FormId)
 
 
 -- Session
-
-
-port storeSession : Maybe String -> Cmd msg
-
-
-port onSessionChange : (Value -> msg) -> Sub msg
-
-
-
+-- port storeSession : Maybe String -> Cmd msg
+-- port onSessionChange : (Value -> msg) -> Sub msg
 -- Forms
 
 

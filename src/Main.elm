@@ -1,65 +1,38 @@
 module Main exposing (..)
 
-import Navigation exposing (Location)
-import Html exposing (..)
-import Route exposing (Route)
-import Util exposing ((=>))
-import Views.PageView as PageView exposing (ActivePage)
-import Page.HomePage as HomePage
-import Page.NotFound as NotFound
-import Page.ErrorPage as ErrorPage exposing (PageLoadError)
-import Page.Login as LoginPage exposing (initialModel)
-import Page.NewForm as NewForm
-import Page.MyForms as MyForms
 import Data.Session as Session exposing (Session)
-import Data.User as User exposing (User, decoder)
+import Route exposing (Route, routeToString)
+import Navigation exposing (Location)
+import Json.Decode as Decode exposing (Value)
+import BoxyStyle exposing (..)
+import Ports exposing (..)
+import Element exposing (..)
+import Element.Attributes exposing (..)
+import Html exposing (..)
 import Data.Form as Form exposing (..)
-import Json.Decode as Decode exposing (Value, decodeValue)
-import Ports as Ports exposing (..)
 
 
--- import Page.Register as Register
+type alias Model =
+    { activePage : Page
+    , session : Session
+    }
 
 
 type Page
     = Blank
     | NotFound
-    | Errored PageLoadError
-    | Home HomePage.Model
-    | NewForm NewForm.Model
-    | MyForms MyForms.Model
-    | Login LoginPage.Model
-
-
-type PageState
-    = Loaded Page
-    | TransitioningFrom Page
+    | Home
+    | NewForm
+    | MyForms
+    | Login
 
 
 
--- MODEL --
-
-
-type alias Model =
-    { pageState : PageState
-    , session : Session
-    }
-
-
-init : Value -> Location -> ( Model, Cmd Msg )
-init val location =
-    setRoute (Route.fromLocation location)
-        { pageState = Loaded initialPage
-        , session = { user = decodeUserFromJson val }
-        }
-
-
-decodeUserFromJson : Value -> Maybe User
-decodeUserFromJson json =
-    json
-        |> Decode.decodeValue Decode.string
-        |> Result.toMaybe
-        |> Maybe.andThen (Decode.decodeString User.decoder >> Result.toMaybe)
+-- | Errored PageLoadError
+-- | Home HomePage.Model
+-- | NewForm NewForm.Model
+-- | MyForms MyForms.Model
+-- | Login LoginPage.Model
 
 
 initialPage : Page
@@ -67,73 +40,88 @@ initialPage =
     Blank
 
 
-
--- VIEW --
+init : Value -> Location -> ( Model, Cmd Msg )
+init val location =
+    ( { activePage = initialPage
+      , session = { user = Nothing }
+      }
+    , Cmd.none
+      -- TODO ladda befintliga formulär
+    )
 
 
 view : Model -> Html Msg
 view model =
-    case model.pageState of
-        Loaded page ->
-            viewPage model.session False page
-
-        TransitioningFrom page ->
-            viewPage model.session True page
-
-
-viewPage : Session -> Bool -> Page -> Html Msg
-viewPage session isLoading page =
     let
-        frame =
-            PageView.frame isLoading session.user
+        page =
+            model.activePage
     in
-        case page of
-            NotFound ->
-                NotFound.view session
-                    |> frame PageView.Other
-
-            Blank ->
-                -- This is for the very intiial page load, while we are loading
-                -- data via HTTP. We could also render a spinner here.
-                Html.text ""
-                    |> frame PageView.Other
-
-            Errored subModel ->
-                ErrorPage.view session subModel
-                    |> frame PageView.Other
-
-            Home subModel ->
-                HomePage.view session subModel
-                    |> frame PageView.Home
-                    |> Html.map HomeMsg
-
-            NewForm subModel ->
-                NewForm.view session subModel
-                    |> frame PageView.Other
-                    |> Html.map NewFormMsg
-
-            MyForms subModel ->
-                MyForms.view session subModel
-                    |> frame PageView.Other
-                    |> Html.map MyFormsMsg
-
-            Login subModel ->
-                LoginPage.view session subModel
-                    |> frame PageView.Other
+        Element.layout stylesheet <|
+            grid Main
+                [ padding 20, spacing 10 ]
+                { columns = [ percent 100 ]
+                , rows = [ px 80, fill ]
+                , cells =
+                    [ cell
+                        { start = ( 0, 0 )
+                        , width = 1
+                        , height = 1
+                        , content = navigation page
+                        }
+                    , cell
+                        { start = ( 0, 1 )
+                        , width = 1
+                        , height = 1
+                        , content =
+                            el Page
+                                [ spacing 50, padding 20, paddingTop 50, paddingBottom 50 ]
+                                (viewPage page)
+                        }
+                    ]
+                }
 
 
-getPage : PageState -> Page
-getPage pageState =
-    -- let
-    --     _ =
-    --         Debug.log "getPage" pageState
-    -- in
-    case pageState of
-        Loaded page ->
-            page
+navigation : Page -> Element Styles variation msg
+navigation activePage =
+    row None
+        [ spread, paddingXY 80 20 ]
+        [ link (routeToString Route.Home) <| el Logo [] (Element.text "Boxyforms")
+        , row None
+            [ spacing 20 ]
+            [ link (routeToString Route.Login) <| el (navStyle activePage Login) [] (Element.text "Logga in")
+            , link (routeToString Route.Login) <| el (navStyle activePage NewForm) [] (Element.text "Nytt formulär")
+            ]
+        ]
 
-        TransitioningFrom page ->
-            page
+
+navStyle : Page -> Page -> Styles
+navStyle activePage navPage =
+    if (activePage == navPage) then
+        ActiveNavOption
+    else
+        NavOption
+
+
+viewPage : Page -> Element style variation Msg
+viewPage page =
+    case page of
+        Blank ->
+            Element.text "Tomt"
+
+        NotFound ->
+            Element.text "Sidan inte funnen"
+
+        Home ->
+            Element.text "Hemma"
+
+        MyForms ->
+            Element.text "Mina formulär"
+
+        NewForm ->
+            Element.text "Nytt formulär"
+
+        Login ->
+            Element.text "Logga in"
 
 
 
@@ -141,137 +129,43 @@ getPage pageState =
 
 
 type Msg
-    = SetRoute (Maybe Route)
-    | HomeLoaded (Result String (List Form))
-    | HomeMsg HomePage.Msg
-    | MyFormsMsg MyForms.Msg
-    | ReceiveUser Value
-    | NewFormMsg NewForm.Msg
-
-
-setRoute : Maybe Route -> Model -> ( Model, Cmd Msg )
-setRoute maybeRoute model =
-    let
-        fromPage =
-            getPage model.pageState
-
-        transition cmd =
-            case fromPage of
-                Login _ ->
-                    { model | pageState = TransitioningFrom fromPage }
-                        => Cmd.batch [ Ports.deleteFBUI (), cmd ]
-
-                _ ->
-                    { model | pageState = TransitioningFrom fromPage }
-                        => cmd
-
-        errored =
-            pageErrored model
-    in
-        case maybeRoute of
-            Nothing ->
-                { model | pageState = Loaded NotFound } => Cmd.none
-
-            Just Route.Home ->
-                transition (HomePage.init model.session)
-
-            Just Route.NewForm ->
-                transition (Cmd.map NewFormMsg (NewForm.init model.session))
-
-            -- { model | pageState = Loaded (NewForm NewForm.initialModel) } => (NewForm.init model.session)
-            Just Route.MyForms ->
-                { model | pageState = Loaded (MyForms MyForms.initialModel) } => Ports.deleteFBUI ()
-
-            Just Route.Login ->
-                { model | pageState = Loaded (Login LoginPage.initialModel) } => Ports.startAuthUI ()
-
-            Just Route.Logout ->
-                { model | session = { user = Nothing } } => Ports.logOut ()
-
-            Just _ ->
-                transition (HomePage.init model.session)
-
-
-pageErrored : Model -> ActivePage -> String -> ( Model, Cmd msg )
-pageErrored model activePage errorMessage =
-    let
-        error =
-            ErrorPage.pageLoadError activePage errorMessage
-    in
-        { model | pageState = Loaded (Errored error) } => Cmd.none
-
-
-toPageLoadError : ActivePage -> String -> PageLoadError
-toPageLoadError activePage errorMessage =
-    ErrorPage.pageLoadError activePage errorMessage
+    = NoOp
+    | SetRoute (Maybe Route)
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
-    updatePage (getPage model.pageState) msg model
+    case msg of
+        NoOp ->
+            ( model, Cmd.none )
+
+        SetRoute route ->
+            setRoute route model
 
 
-updatePage : Page -> Msg -> Model -> ( Model, Cmd Msg )
-updatePage page msg model =
-    let
-        session =
-            model.session
+setRoute : Maybe Route -> Model -> ( Model, Cmd Msg )
+setRoute maybeRoute model =
+    case maybeRoute of
+        Nothing ->
+            ( { model | activePage = NotFound }, Cmd.none )
 
-        toPage toModel toMsg subUpdate subMsg subModel =
-            let
-                ( newModel, newCmd ) =
-                    subUpdate subMsg subModel
-            in
-                ( { model | pageState = Loaded (toModel newModel) }, Cmd.map toMsg newCmd )
+        Just Route.Home ->
+            ( { model | activePage = Home }, Cmd.none )
 
-        errored =
-            pageErrored model
-    in
-        case ( msg, page ) of
-            ( SetRoute route, _ ) ->
-                setRoute route model
+        Just Route.Login ->
+            ( { model | activePage = Login }, Cmd.none )
 
-            ( HomeLoaded (Ok subModel), _ ) ->
-                { model | pageState = Loaded (Home { forms = subModel }) } => Cmd.none
+        Just Route.Logout ->
+            ( { model | activePage = Home }, Cmd.none )
 
-            ( HomeLoaded (Err error), _ ) ->
-                { model | pageState = Loaded (Errored (toPageLoadError PageView.Home error)) } => Cmd.none
+        Just Route.MyForms ->
+            ( { model | activePage = MyForms }, Cmd.none )
 
-            ( HomeMsg subMsg, Home subModel ) ->
-                toPage Home HomeMsg (HomePage.update session) subMsg subModel
+        Just (Route.Profile username) ->
+            ( { model | activePage = Home }, Cmd.none )
 
-            ( NewFormMsg subMsg, NewForm subModel ) ->
-                toPage NewForm NewFormMsg (NewForm.update session) subMsg subModel
-
-            ( NewFormMsg subMsg, _ ) ->
-                toPage NewForm NewFormMsg (NewForm.update session) subMsg NewForm.initialModel
-
-            -- En användare har loggat in eller skapats
-            ( ReceiveUser value, _ ) ->
-                value
-                    |> Decode.decodeValue User.decoder
-                    |> Result.map (\user -> { model | session = { user = Just user } } ! [])
-                    |> Result.withDefault (model ! [])
-
-            ( _, NotFound ) ->
-                let
-                    _ =
-                        Debug.log "Update" "_,NotFound"
-                in
-                    -- Disregard incoming messages when we're on the
-                    -- NotFound page.
-                    model => Cmd.none
-
-            ( _, _ ) ->
-                let
-                    _ =
-                        Debug.log "SetRoute _,_ page" page
-
-                    _ =
-                        Debug.log "SetRoute _,_ msg" msg
-                in
-                    -- Disregard incoming messages that arrived for the wrong page
-                    model => Cmd.none
+        Just Route.NewForm ->
+            ( { model | activePage = NewForm }, Cmd.none )
 
 
 
@@ -280,14 +174,7 @@ updatePage page msg model =
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-    let
-        getAllFormsSub =
-            Ports.gotAllPublicForms (Decode.decodeValue jsonFormListDecoder)
-    in
-        Sub.batch
-            [ Sub.map HomeLoaded getAllFormsSub
-            , Ports.receiveUser ReceiveUser
-            ]
+    Sub.none
 
 
 
