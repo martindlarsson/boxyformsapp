@@ -64,13 +64,13 @@ stylesheet =
         , style Box
             [ Transition.all
             , Color.text Color.white
-            , Color.background Color.blue
-            , Color.border Color.blue
+            , Color.background Color.orange
+            , Color.border Color.charcoal
             , Border.rounded 3 -- round all borders to 3px
             , hover
                 [ Color.text Color.white
-                , Color.background Color.red
-                , Color.border Color.red
+                , Color.background Color.yellow
+                , Color.border Color.charcoal
                 , cursor "pointer"
                 ]
             ]

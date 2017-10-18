@@ -66,7 +66,8 @@ function getFirstObject(resultObject) {
 }
 
 app.ports.logOut.subscribe(() => {
-  firebase.auth().signOut()
+    console.log("Loggar ut användaren")
+    firebase.auth().signOut()
 })
 
 
@@ -76,6 +77,7 @@ app.ports.startAuthUI.subscribe(() => {
     // FirebaseUI config.
         var uiConfig = {
             signInSuccessUrl: '/#/myforms', // TODO, ta in parameter för detta
+            signInFlow: 'popup',
             signInOptions: [
                 {
                     provider: firebase.auth.GoogleAuthProvider.PROVIDER_ID,
@@ -106,47 +108,39 @@ app.ports.startAuthUI.subscribe(() => {
     requestAnimationFrame(function(){
         // The start method will wait until the DOM is loaded.
         ui.start('#firebaseui-auth-container', uiConfig);
-        });
+    });
 })
-
-firebase.auth().onAuthStateChanged(function(user) {
-          if (user) {
-
-            var boxyUser = {
-                "id" : user.uid
-                , "email" : user.email
-                , "displayName" : user.displayName
-                , "imageUrl" : user.photoURL
-                , "createdAt" : "?"
-                , "updatedAt" : "?"
-            }
-            // console.log("boxy user:", boxyUser);
-
-            app.ports.receiveUser.send(boxyUser)
-          } else {
-            // User is signed in.
-            console.log("User signed out")
-            // User is signed out.
-            // TODO port for when the user is signed out
-          }
-        }, function(error) {
-          console.log(error);
-        });
 
 
 // Port that deletes the firebaseui widget
-app.ports.deleteFBUI.subscribe(() => {
-    if (ui) {
-        $(".firebaseui-container").hide();
-    } else { console.log("No UI to delete.") }
-})
-
-// app.ports.addDateTimePicker.subscribe(() => {
-//     $( ".date" ).each(function() {
-//         $( this ).datetimepicker({
-//                     locale: 'sv',
-//                 inline: true,
-//                 sideBySide: true
-//                 });
-//         });
+// app.ports.deleteFBUI.subscribe(() => {
+//     if (ui) {
+//         $(".firebaseui-container").hide();
+//     } else { console.log("No UI to delete.") }
 // })
+
+
+firebase.auth().onAuthStateChanged(function(user) {
+    // console.log("onAuthStateChanged user:", user)
+    if (user) {
+        var boxyUser = {
+            "id" : user.uid
+            , "email" : user.email
+            , "displayName" : user.displayName
+            , "imageUrl" : user.photoURL
+            , "createdAt" : "?"
+            , "updatedAt" : "?"
+        }
+        // console.log("boxy user:", boxyUser);
+        // console.log("Firebase user:",user)
+    
+        app.ports.receiveUser.send(boxyUser)
+    } else {
+        // User is signed out.
+        console.log("User signed out")
+        app.ports.userLoggedOut.send(null)
+    }
+}, function(error) {
+    console.log(error);
+});
+    

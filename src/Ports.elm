@@ -47,3 +47,6 @@ port addDateTimePicker : () -> Cmd msg
 
 
 port receiveUser : (Value -> msg) -> Sub msg
+
+
+port userLoggedOut : (() -> msg) -> Sub msg

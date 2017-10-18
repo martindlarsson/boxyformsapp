@@ -9,7 +9,9 @@ import Ports exposing (..)
 import Element exposing (..)
 import Element.Attributes exposing (..)
 import Html exposing (..)
-import Data.Form as Form exposing (..)
+import Data.User as User exposing (User, decoder)
+import Page.Login as LoginPage exposing (view)
+import Page.Home as HomePage exposing (view)
 
 
 type alias Model =
@@ -19,34 +21,19 @@ type alias Model =
 
 
 type Page
-    = Blank
-    | NotFound
+    = NotFound
     | Home
     | NewForm
     | MyForms
     | Login
 
 
-
--- | Errored PageLoadError
--- | Home HomePage.Model
--- | NewForm NewForm.Model
--- | MyForms MyForms.Model
--- | Login LoginPage.Model
-
-
-initialPage : Page
-initialPage =
-    Blank
-
-
 init : Value -> Location -> ( Model, Cmd Msg )
 init val location =
-    ( { activePage = initialPage
+    ( { activePage = Home
       , session = { user = Nothing }
       }
     , Cmd.none
-      -- TODO ladda befintliga formulär
     )
 
 
@@ -56,7 +43,7 @@ view model =
         page =
             model.activePage
     in
-        Element.layout stylesheet <|
+        Element.viewport stylesheet <|
             grid Main
                 [ padding 20, spacing 10 ]
                 { columns = [ percent 100 ]
@@ -66,7 +53,7 @@ view model =
                         { start = ( 0, 0 )
                         , width = 1
                         , height = 1
-                        , content = navigation page
+                        , content = navigation model
                         }
                     , cell
                         { start = ( 0, 1 )
@@ -81,17 +68,41 @@ view model =
                 }
 
 
-navigation : Page -> Element Styles variation msg
-navigation activePage =
-    row None
-        [ spread, paddingXY 80 20 ]
-        [ link (routeToString Route.Home) <| el Logo [] (Element.text "Boxyforms")
-        , row None
-            [ spacing 20 ]
-            [ link (routeToString Route.Login) <| el (navStyle activePage Login) [] (Element.text "Logga in")
-            , link (routeToString Route.Login) <| el (navStyle activePage NewForm) [] (Element.text "Nytt formulär")
+
+-- TODO gör responsiv och dölj saker på mindre skärmar
+
+
+navigation : Model -> Element Styles variation msg
+navigation model =
+    let
+        activePage =
+            model.activePage
+    in
+        row None
+            [ spread, paddingXY 80 20 ]
+            [ link (routeToString Route.Home) <| el Logo [] (Element.text "BoxyForms")
+            , row None
+                [ spacing 20 ]
+                (signInLink model)
             ]
-        ]
+
+
+signInLink : Model -> List (Element Styles variation msg)
+signInLink model =
+    let
+        user =
+            model.session.user
+
+        activePage =
+            model.activePage
+    in
+        if (user == Nothing) then
+            [ link (routeToString Route.Login) <| el (navStyle activePage Login) [] (Element.text "Logga in") ]
+        else
+            [ link (routeToString Route.NewForm) <| el (navStyle activePage NewForm) [] (Element.text "Nytt formulär")
+            , link (routeToString Route.MyForms) <| el (navStyle activePage MyForms) [] (Element.text "Mina formulär")
+            , link (routeToString Route.Logout) <| el NavOption [] (Element.text "Logga ut")
+            ]
 
 
 navStyle : Page -> Page -> Styles
@@ -102,17 +113,14 @@ navStyle activePage navPage =
         NavOption
 
 
-viewPage : Page -> Element style variation Msg
+viewPage : Page -> Element Styles variation Msg
 viewPage page =
     case page of
-        Blank ->
-            Element.text "Tomt"
-
         NotFound ->
             Element.text "Sidan inte funnen"
 
         Home ->
-            Element.text "Hemma"
+            HomePage.view
 
         MyForms ->
             Element.text "Mina formulär"
@@ -121,7 +129,7 @@ viewPage page =
             Element.text "Nytt formulär"
 
         Login ->
-            Element.text "Logga in"
+            LoginPage.view
 
 
 
@@ -131,16 +139,32 @@ viewPage page =
 type Msg
     = NoOp
     | SetRoute (Maybe Route)
+    | ReceivedUser Value
+    | UserLoggedOut
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
-    case msg of
-        NoOp ->
-            ( model, Cmd.none )
+    let
+        _ =
+            Debug.log "update" msg
+    in
+        case msg of
+            NoOp ->
+                ( model, Cmd.none )
 
-        SetRoute route ->
-            setRoute route model
+            SetRoute route ->
+                setRoute route model
+
+            -- En användare har loggat in eller skapats
+            ReceivedUser value ->
+                value
+                    |> Decode.decodeValue User.decoder
+                    |> Result.map (\user -> { model | session = { user = Just user } } ! [])
+                    |> Result.withDefault (model ! [])
+
+            UserLoggedOut ->
+                ( { model | session = { user = Nothing } }, Cmd.none )
 
 
 setRoute : Maybe Route -> Model -> ( Model, Cmd Msg )
@@ -153,10 +177,10 @@ setRoute maybeRoute model =
             ( { model | activePage = Home }, Cmd.none )
 
         Just Route.Login ->
-            ( { model | activePage = Login }, Cmd.none )
+            ( { model | activePage = Login }, Ports.startAuthUI () )
 
         Just Route.Logout ->
-            ( { model | activePage = Home }, Cmd.none )
+            ( { model | activePage = Home }, Ports.logOut () )
 
         Just Route.MyForms ->
             ( { model | activePage = MyForms }, Cmd.none )
@@ -174,7 +198,7 @@ setRoute maybeRoute model =
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-    Sub.none
+    Sub.batch [ Ports.receiveUser ReceivedUser, Ports.userLoggedOut (\_ -> UserLoggedOut) ]
 
 
 
