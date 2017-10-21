@@ -11,7 +11,7 @@ import BoxyStyle exposing (..)
 view : Element Styles variation msg
 view =
     grid None
-        [ center ]
+        []
         { columns = [ percent 100 ]
         , rows = [ fill, fill ]
         , cells =
@@ -22,7 +22,7 @@ view =
                 , content =
                     row Box
                         [ center, verticalCenter, width (px 200), height (px 40) ]
-                        [ (Element.text "[ Skapa ditt formulär ]") ]
+                        [ (Element.text "Skapa ett formulär") ]
                 }
             , cell
                 { start = ( 0, 1 )

@@ -1,7 +1,7 @@
-module Data.User exposing (User, decoder, encode, usernameParser)
+module Data.User exposing (..)
 
 import Json.Decode as Decode exposing (Decoder)
-import Json.Decode.Pipeline as Pipeline exposing (decode, required)
+import Json.Decode.Pipeline as Pipeline exposing (decode, required, hardcoded)
 import Json.Encode as Encode exposing (Value)
 import Json.Encode.Extra as EncodeExtra
 import Util exposing ((=>))
@@ -13,8 +13,24 @@ type alias User =
     , email : String
     , displayName : String
     , imageUrl : Maybe String
-    , createdAt : String
+    , userData : Maybe UserData
+    }
+
+
+type alias UserData =
+    { createdAt : String
     , updatedAt : String
+    , orgName : String
+    , stripeAccount : String
+    }
+
+
+emptyUserData : UserData
+emptyUserData =
+    { createdAt = ""
+    , updatedAt = ""
+    , orgName = ""
+    , stripeAccount = ""
     }
 
 
@@ -29,8 +45,7 @@ decoder =
         |> required "email" Decode.string
         |> required "displayName" Decode.string
         |> required "imageUrl" (Decode.nullable Decode.string)
-        |> required "createdAt" Decode.string
-        |> required "updatedAt" Decode.string
+        |> hardcoded Nothing
 
 
 encode : User -> Value
@@ -40,8 +55,25 @@ encode user =
         , "email" => Encode.string user.email
         , "displayName" => Encode.string user.displayName
         , "imageUrl" => EncodeExtra.maybe Encode.string user.imageUrl
-        , "createdAt" => Encode.string user.createdAt
-        , "updatedAt" => Encode.string user.updatedAt
+        ]
+
+
+dataDecoder : Decoder UserData
+dataDecoder =
+    decode UserData
+        |> required "createdAt" Decode.string
+        |> required "updatedAt" Decode.string
+        |> required "orgName" Decode.string
+        |> required "stripeAccount" Decode.string
+
+
+encodeData : UserData -> Value
+encodeData userData =
+    Encode.object
+        [ "createdAt" => Encode.string userData.createdAt
+        , "updatedAt" => Encode.string userData.updatedAt
+        , "orgName" => Encode.string userData.orgName
+        , "stripeAccount" => Encode.string userData.stripeAccount
         ]
 
 
@@ -52,3 +84,22 @@ type Username
 usernameParser : UrlParser.Parser (String -> a) a
 usernameParser =
     UrlParser.custom "USERNAME" Ok
+
+
+type UserState
+    = UserIsOK
+    | UserNeedsMoreInfo
+    | NotLoggedIn
+
+
+validateUser : Maybe User -> UserState
+validateUser user =
+    case user of
+        Nothing ->
+            NotLoggedIn
+
+        Just user ->
+            if (user.userData == Nothing) then
+                UserNeedsMoreInfo
+            else
+                UserIsOK

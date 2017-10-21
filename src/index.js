@@ -10,6 +10,7 @@ var mountNode = document.getElementById('main');
 firebase.initializeApp(require('../firebase.config'));
 var database = firebase.database();
 var formsRef = database.ref('forms/');
+var usersRef = database.ref('users/');
 
 // .embed() can take an optional second argument. This would be an object describing the data we need to start a program, i.e. a userID or some token
 var app = Elm.Main.embed(mountNode);
@@ -32,6 +33,29 @@ app.ports.getForm.subscribe(function (formId) {
         var form = getFirstObject(snapshot.val());
         app.ports.gotForm.send(form);
     })
+});
+
+// Get user data from Firebase
+app.ports.getAllPublicForms.subscribe(function (userId) {
+    var userId = firebase.auth().currentUser.uid;
+    return firebase.database().ref('/users/' + userId).once('value');
+});
+
+// Save user data on Firebase
+app.ports.getAllPublicForms.subscribe(function (user) {
+    console.log(user);
+    firebase.database().ref('users/' + userId).set({
+        id: user.userId,
+        email: user.email,
+        displayName: user.displayName,
+        imageUrl : user.imageUrl,
+        userData: {
+            createdAt: user.createdAt,
+            updatedAt: user.updatedAt,
+            orgName: user.orgName,
+            stripeAccount: user.stripeAccount
+        }
+    });
 });
 
 function getAsList(resultObject) {
@@ -76,7 +100,7 @@ app.ports.startAuthUI.subscribe(() => {
 
     // FirebaseUI config.
         var uiConfig = {
-            signInSuccessUrl: '/#/myforms', // TODO, ta in parameter för detta
+            signInSuccessUrl: '/#/', // TODO, ta in parameter för detta
             signInFlow: 'popup',
             signInOptions: [
                 {
@@ -128,8 +152,8 @@ firebase.auth().onAuthStateChanged(function(user) {
             , "email" : user.email
             , "displayName" : user.displayName
             , "imageUrl" : user.photoURL
-            , "createdAt" : "?"
-            , "updatedAt" : "?"
+            // , "createdAt" : "?"
+            // , "updatedAt" : "?"
         }
         // console.log("boxy user:", boxyUser);
         // console.log("Firebase user:",user)

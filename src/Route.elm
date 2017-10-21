@@ -15,7 +15,7 @@ type Route
     | Login
     | Logout
     | MyForms
-    | Profile String
+    | Profile
     | NewForm
 
 
@@ -32,7 +32,7 @@ route =
         , Url.map Logout (s "logout")
         , Url.map MyForms (s "myforms")
         , Url.map NewForm (s "newform")
-        , Url.map Profile (s "profile" </> User.usernameParser)
+        , Url.map Profile (s "profile")
         ]
 
 
@@ -60,8 +60,8 @@ routeToString page =
                 NewForm ->
                     [ "newform" ]
 
-                Profile username ->
-                    [ "profile", username ]
+                Profile ->
+                    [ "profile" ]
     in
         "#/" ++ String.join "/" pieces
 

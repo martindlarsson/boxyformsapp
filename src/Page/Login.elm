@@ -4,9 +4,9 @@ import Html exposing (..)
 import Element exposing (..)
 import BoxyStyle exposing (..)
 import Html.Attributes exposing (class, id)
-import Data.Session as Session exposing (Session)
 
 
+-- import Data.Session as Session exposing (Session)
 -- VIEW --
 
 

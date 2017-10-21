@@ -1,6 +1,5 @@
 module Main exposing (..)
 
-import Data.Session as Session exposing (Session)
 import Route exposing (Route, routeToString)
 import Navigation exposing (Location)
 import Json.Decode as Decode exposing (Value)
@@ -9,14 +8,17 @@ import Ports exposing (..)
 import Element exposing (..)
 import Element.Attributes exposing (..)
 import Html exposing (..)
-import Data.User as User exposing (User, decoder)
+import Data.User as User exposing (..)
 import Page.Login as LoginPage exposing (view)
 import Page.Home as HomePage exposing (view)
+import Page.Profile as ProfilePage exposing (view, update, Msg)
 
 
 type alias Model =
     { activePage : Page
-    , session : Session
+    , user : Maybe User
+
+    -- , session : Session
     }
 
 
@@ -26,12 +28,15 @@ type Page
     | NewForm
     | MyForms
     | Login
+    | Profile
 
 
 init : Value -> Location -> ( Model, Cmd Msg )
 init val location =
     ( { activePage = Home
-      , session = { user = Nothing }
+      , user = Nothing
+
+      --   , session = { user = Nothing }
       }
     , Cmd.none
     )
@@ -61,8 +66,8 @@ view model =
                         , height = 1
                         , content =
                             el Page
-                                [ spacing 50, padding 20, paddingTop 50, paddingBottom 50 ]
-                                (viewPage page)
+                                [ spacing 20, padding 20, paddingTop 50, paddingBottom 50 ]
+                                (viewPage page model)
                         }
                     ]
                 }
@@ -91,7 +96,7 @@ signInLink : Model -> List (Element Styles variation msg)
 signInLink model =
     let
         user =
-            model.session.user
+            model.user
 
         activePage =
             model.activePage
@@ -101,6 +106,7 @@ signInLink model =
         else
             [ link (routeToString Route.NewForm) <| el (navStyle activePage NewForm) [] (Element.text "Nytt formulär")
             , link (routeToString Route.MyForms) <| el (navStyle activePage MyForms) [] (Element.text "Mina formulär")
+            , link (routeToString Route.Profile) <| el (navStyle activePage Profile) [] (Element.text "Min profil")
             , link (routeToString Route.Logout) <| el NavOption [] (Element.text "Logga ut")
             ]
 
@@ -113,8 +119,8 @@ navStyle activePage navPage =
         NavOption
 
 
-viewPage : Page -> Element Styles variation Msg
-viewPage page =
+viewPage : Page -> Model -> Element Styles variation Msg
+viewPage page model =
     case page of
         NotFound ->
             Element.text "Sidan inte funnen"
@@ -127,6 +133,18 @@ viewPage page =
 
         NewForm ->
             Element.text "Nytt formulär"
+
+        Profile ->
+            let
+                user =
+                    model.user
+            in
+                case user of
+                    Nothing ->
+                        Element.text "ERROR!! det finns ingen inloggad användare..."
+
+                    Just user ->
+                        Element.map ProfilePageMsg (ProfilePage.view user.userData)
 
         Login ->
             LoginPage.view
@@ -141,6 +159,8 @@ type Msg
     | SetRoute (Maybe Route)
     | ReceivedUser Value
     | UserLoggedOut
+    | ReceivedUserData Value
+    | ProfilePageMsg ProfilePage.Msg
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -154,17 +174,65 @@ update msg model =
                 ( model, Cmd.none )
 
             SetRoute route ->
-                setRoute route model
+                let
+                    isUserDataOK =
+                        validateUser model.user
+
+                    _ =
+                        Debug.log "SetRoute validateUser" isUserDataOK
+                in
+                    case isUserDataOK of
+                        UserIsOK ->
+                            setRoute route model
+
+                        UserNeedsMoreInfo ->
+                            setRoute (Just Route.Profile) model
+
+                        NotLoggedIn ->
+                            setRoute (Just Route.Login) model
 
             -- En användare har loggat in eller skapats
             ReceivedUser value ->
                 value
                     |> Decode.decodeValue User.decoder
-                    |> Result.map (\user -> { model | session = { user = Just user } } ! [])
+                    |> Result.map (\user -> { model | user = Just user } ! [ Ports.getUserData user.id ])
                     |> Result.withDefault (model ! [])
 
+            -- Vi har fått ytterligare information om användarens konto
+            ReceivedUserData value ->
+                value
+                    |> Decode.decodeValue User.dataDecoder
+                    |> Result.map (\userData -> updateUserData model (Just userData) ! [])
+                    |> Result.withDefault (setRoute (Just Route.Profile) model)
+
             UserLoggedOut ->
-                ( { model | session = { user = Nothing } }, Cmd.none )
+                let
+                    updatedModel =
+                        { model | user = Nothing }
+                in
+                    setRoute (Just Route.Home) updatedModel
+
+            ProfilePageMsg subMsg ->
+                ( updateUser model (ProfilePage.update subMsg model.user), Cmd.none )
+
+
+updateUser : Model -> Maybe User -> Model
+updateUser model newUser =
+    { model | user = newUser }
+
+
+updateUserData : Model -> Maybe UserData -> Model
+updateUserData model newUserData =
+    case model.user of
+        Nothing ->
+            model
+
+        Just user ->
+            let
+                newUser =
+                    { user | userData = newUserData }
+            in
+                updateUser model (Just newUser)
 
 
 setRoute : Maybe Route -> Model -> ( Model, Cmd Msg )
@@ -185,8 +253,8 @@ setRoute maybeRoute model =
         Just Route.MyForms ->
             ( { model | activePage = MyForms }, Cmd.none )
 
-        Just (Route.Profile username) ->
-            ( { model | activePage = Home }, Cmd.none )
+        Just Route.Profile ->
+            ( { model | activePage = Profile }, Cmd.none )
 
         Just Route.NewForm ->
             ( { model | activePage = NewForm }, Cmd.none )
@@ -198,7 +266,11 @@ setRoute maybeRoute model =
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-    Sub.batch [ Ports.receiveUser ReceivedUser, Ports.userLoggedOut (\_ -> UserLoggedOut) ]
+    Sub.batch
+        [ Ports.receiveUser ReceivedUser
+        , Ports.userLoggedOut (\_ -> UserLoggedOut)
+        , Ports.receiveUserData ReceivedUserData
+        ]
 
 
 

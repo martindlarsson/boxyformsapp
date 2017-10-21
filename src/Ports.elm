@@ -10,6 +10,9 @@ import Data.Form exposing (Form, FormId)
 -- Forms
 
 
+port getUserData : String -> Cmd msg
+
+
 port getAllPublicForms : () -> Cmd msg
 
 
@@ -25,9 +28,7 @@ port gotForm : (Json.Decode.Value -> msg) -> Sub msg
 
 -- Authentication
 -- Outbound
-
-
-port requestAuthentication : String -> Cmd msg
+-- port requestAuthentication : String -> Cmd msg
 
 
 port logOut : () -> Cmd msg
@@ -36,7 +37,8 @@ port logOut : () -> Cmd msg
 port startAuthUI : () -> Cmd msg
 
 
-port deleteFBUI : () -> Cmd msg
+
+-- port deleteFBUI : () -> Cmd msg
 
 
 port addDateTimePicker : () -> Cmd msg
@@ -47,6 +49,9 @@ port addDateTimePicker : () -> Cmd msg
 
 
 port receiveUser : (Value -> msg) -> Sub msg
+
+
+port receiveUserData : (Value -> msg) -> Sub msg
 
 
 port userLoggedOut : (() -> msg) -> Sub msg
