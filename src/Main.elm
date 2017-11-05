@@ -144,7 +144,7 @@ viewPage page model =
                         Element.text "ERROR!! det finns ingen inloggad användare..."
 
                     Just user ->
-                        Element.map ProfilePageMsg (ProfilePage.view user.userData)
+                        Element.map ProfilePageMsg (ProfilePage.view user)
 
         Login ->
             LoginPage.view
@@ -157,9 +157,8 @@ viewPage page model =
 type Msg
     = NoOp
     | SetRoute (Maybe Route)
-    | ReceivedUser Value
+    | UserLoggedIn Value
     | UserLoggedOut
-    | ReceivedUserData Value
     | ProfilePageMsg ProfilePage.Msg
 
 
@@ -179,31 +178,30 @@ update msg model =
                         validateUser model.user
 
                     _ =
-                        Debug.log "SetRoute validateUser" isUserDataOK
+                        Debug.log "setRoute validateUser" isUserDataOK
                 in
                     case isUserDataOK of
                         UserIsOK ->
                             setRoute route model
 
                         UserNeedsMoreInfo ->
-                            setRoute (Just Route.Profile) model
+                            if (route == (Just Route.Home) || route == (Just Route.Logout)) then
+                                setRoute route model
+                            else
+                                setRoute (Just Route.Profile) model
 
                         NotLoggedIn ->
-                            setRoute (Just Route.Login) model
+                            if (route == (Just Route.Home)) then
+                                setRoute route model
+                            else
+                                setRoute (Just Route.Login) model
 
             -- En användare har loggat in eller skapats
-            ReceivedUser value ->
+            UserLoggedIn value ->
                 value
                     |> Decode.decodeValue User.decoder
-                    |> Result.map (\user -> { model | user = Just user } ! [ Ports.getUserData user.id ])
+                    |> Result.map (\user -> { model | user = Just user } ! [])
                     |> Result.withDefault (model ! [])
-
-            -- Vi har fått ytterligare information om användarens konto
-            ReceivedUserData value ->
-                value
-                    |> Decode.decodeValue User.dataDecoder
-                    |> Result.map (\userData -> updateUserData model (Just userData) ! [])
-                    |> Result.withDefault (setRoute (Just Route.Profile) model)
 
             UserLoggedOut ->
                 let
@@ -213,26 +211,16 @@ update msg model =
                     setRoute (Just Route.Home) updatedModel
 
             ProfilePageMsg subMsg ->
-                ( updateUser model (ProfilePage.update subMsg model.user), Cmd.none )
+                case model.user of
+                    Nothing ->
+                        ( model, Cmd.none )
 
-
-updateUser : Model -> Maybe User -> Model
-updateUser model newUser =
-    { model | user = newUser }
-
-
-updateUserData : Model -> Maybe UserData -> Model
-updateUserData model newUserData =
-    case model.user of
-        Nothing ->
-            model
-
-        Just user ->
-            let
-                newUser =
-                    { user | userData = newUserData }
-            in
-                updateUser model (Just newUser)
+                    Just user ->
+                        let
+                            ( newUser, cmd ) =
+                                ProfilePage.update subMsg user
+                        in
+                            ( { model | user = Just newUser }, cmd )
 
 
 setRoute : Maybe Route -> Model -> ( Model, Cmd Msg )
@@ -267,9 +255,8 @@ setRoute maybeRoute model =
 subscriptions : Model -> Sub Msg
 subscriptions model =
     Sub.batch
-        [ Ports.receiveUser ReceivedUser
+        [ Ports.userLoggedIn UserLoggedIn
         , Ports.userLoggedOut (\_ -> UserLoggedOut)
-        , Ports.receiveUserData ReceivedUserData
         ]
 
 

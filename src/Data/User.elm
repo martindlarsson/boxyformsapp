@@ -1,6 +1,6 @@
 module Data.User exposing (..)
 
-import Json.Decode as Decode exposing (Decoder)
+import Json.Decode as Decode exposing (Decoder, nullable)
 import Json.Decode.Pipeline as Pipeline exposing (decode, required, hardcoded)
 import Json.Encode as Encode exposing (Value)
 import Json.Encode.Extra as EncodeExtra
@@ -13,24 +13,9 @@ type alias User =
     , email : String
     , displayName : String
     , imageUrl : Maybe String
-    , userData : Maybe UserData
-    }
-
-
-type alias UserData =
-    { createdAt : String
-    , updatedAt : String
-    , orgName : String
-    , stripeAccount : String
-    }
-
-
-emptyUserData : UserData
-emptyUserData =
-    { createdAt = ""
-    , updatedAt = ""
-    , orgName = ""
-    , stripeAccount = ""
+    , createdAt : Maybe String
+    , updatedAt : Maybe String
+    , orgName : Maybe String
     }
 
 
@@ -45,7 +30,9 @@ decoder =
         |> required "email" Decode.string
         |> required "displayName" Decode.string
         |> required "imageUrl" (Decode.nullable Decode.string)
-        |> hardcoded Nothing
+        |> required "createdAt" (Decode.nullable Decode.string)
+        |> required "updatedAt" (Decode.nullable Decode.string)
+        |> required "orgName" (Decode.nullable Decode.string)
 
 
 encode : User -> Value
@@ -55,25 +42,9 @@ encode user =
         , "email" => Encode.string user.email
         , "displayName" => Encode.string user.displayName
         , "imageUrl" => EncodeExtra.maybe Encode.string user.imageUrl
-        ]
-
-
-dataDecoder : Decoder UserData
-dataDecoder =
-    decode UserData
-        |> required "createdAt" Decode.string
-        |> required "updatedAt" Decode.string
-        |> required "orgName" Decode.string
-        |> required "stripeAccount" Decode.string
-
-
-encodeData : UserData -> Value
-encodeData userData =
-    Encode.object
-        [ "createdAt" => Encode.string userData.createdAt
-        , "updatedAt" => Encode.string userData.updatedAt
-        , "orgName" => Encode.string userData.orgName
-        , "stripeAccount" => Encode.string userData.stripeAccount
+        , "createdAt" => EncodeExtra.maybe Encode.string user.createdAt
+        , "updatedAt" => EncodeExtra.maybe Encode.string user.updatedAt
+        , "orgName" => EncodeExtra.maybe Encode.string user.orgName
         ]
 
 
@@ -99,7 +70,7 @@ validateUser user =
             NotLoggedIn
 
         Just user ->
-            if (user.userData == Nothing) then
+            if (user.orgName == Nothing) then
                 UserNeedsMoreInfo
             else
                 UserIsOK

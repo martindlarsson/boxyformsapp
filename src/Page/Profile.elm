@@ -1,10 +1,12 @@
 module Page.Profile exposing (view, update, Msg)
 
 import Element exposing (..)
+import Element.Events exposing (..)
 import Element.Input as Input exposing (..)
 import Element.Attributes exposing (..)
 import BoxyStyle exposing (..)
 import Data.User as User exposing (..)
+import Ports exposing (saveUser)
 
 
 -- Msg --
@@ -12,6 +14,7 @@ import Data.User as User exposing (..)
 
 type Msg
     = TextChanged Field String
+    | SaveUser User
 
 
 type Field
@@ -22,70 +25,49 @@ type Field
 -- Update --
 
 
-update : Msg -> Maybe User -> Maybe User
-update msg maybeUser =
-    case maybeUser of
-        Nothing ->
-            maybeUser
+update : Msg -> User -> ( User, Cmd msg )
+update msg user =
+    case msg of
+        TextChanged field newText ->
+            case field of
+                OrgName ->
+                    ( { user | orgName = Just newText }, Cmd.none )
 
-        Just user ->
-            let
-                userData =
-                    getUserData user.userData
-            in
-                case msg of
-                    TextChanged field newText ->
-                        case field of
-                            OrgName ->
-                                let
-                                    newUserData =
-                                        { userData | orgName = newText }
-                                in
-                                    Just { user | userData = Just newUserData }
-
-
-getUserData : Maybe UserData -> UserData
-getUserData maybeUserData =
-    case maybeUserData of
-        Nothing ->
-            emptyUserData
-
-        Just maybeUserData ->
-            maybeUserData
+        SaveUser user ->
+            ( user, saveUser (encode user) )
 
 
 
 -- VIEW --
 
 
-view : Maybe UserData -> Element Styles variation Msg
-view userData =
-    let
-        oldUserData =
-            case userData of
-                Nothing ->
-                    emptyUserData
-
-                Just userData ->
-                    userData
-    in
-        column None
+view : User -> Element Styles variation Msg
+view user =
+    column None
+        [ padding 20 ]
+        [ row None [] [ Element.text "Vi behöver veta lite mer om dig. Var vänlig och fyll i fälten." ]
+        , row None [] [ Element.text (String.append "Användare: " user.displayName) ]
+        , row None [] [ Element.text (String.append "Epost: " user.email) ]
+        , Input.text Field
             []
-            [ row None [ padding 20 ] [ Element.text "Vi behöver veta lite mer om dig. Var vänlig och fyll i fälten." ]
-            , Input.text Field
-                [ padding 10 ]
-                { onChange = TextChanged OrgName
-                , value = oldUserData.orgName
-                , label =
-                    Input.placeholder
-                        { label = Input.labelAbove (el None [ verticalCenter ] (Element.text "Organisation"))
-                        , text = "Din organisation eller ditt namn"
-                        }
-                , options =
-                    [ Input.errorBelow (el Error [] (Element.text "Detta fält måste fyllas i"))
-                    ]
-                }
-            , row Box
-                [ center, verticalCenter, width (px 200), height (px 40) ]
-                [ (Element.text "Spara") ]
-            ]
+            { onChange = TextChanged OrgName
+            , value =
+                case user.orgName of
+                    Nothing ->
+                        ""
+
+                    Just name ->
+                        name
+            , label =
+                Input.placeholder
+                    { label = Input.labelAbove (el None [ verticalCenter ] (Element.text "Organisation"))
+                    , text = "Din organisation eller ditt namn"
+                    }
+            , options =
+                [ Input.errorBelow (el Error [] (Element.text "Detta fält måste fyllas i"))
+                ]
+            }
+        , row Box
+            [ center, verticalCenter, width (px 200), height (px 40), onClick (SaveUser user) ]
+            [ (Element.text "Spara") ]
+        ]
