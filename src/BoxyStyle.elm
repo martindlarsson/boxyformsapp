@@ -14,6 +14,7 @@ type Styles
     | Main
     | Page
     | Logo
+    | Navigation
     | NavOption
     | ActiveNavOption
     | Box
@@ -21,6 +22,9 @@ type Styles
     | Label
     | Field
     | Error
+    | InfoBox
+    | InfoBoxTop
+    | InfoBoxBody
 
 
 sansSerif : List Font
@@ -37,21 +41,15 @@ stylesheet =
         [ style None [] -- It's handy to have a blank style
         , style Main
             [ Color.text Color.darkCharcoal
-            , Color.background Color.white
+            , Color.background Color.lightGray
             , Font.typeface sansSerif
             , Font.size 16
             , Font.lineHeight 1.3 -- line height, given as a ratio of current font size.
             ]
+        , style Navigation
+            [ Color.background Color.lightOrange ]
         , style Page
             [ Color.text Color.darkCharcoal
-
-            -- , Color.background Color.lightGray
-            -- , Shadow.box
-            --     { offset = ( 5, 5 )
-            --     , size = 2
-            --     , blur = 15
-            --     , color = Color.gray
-            --     }
             ]
         , style Label
             [ Font.size 25 -- set font size to 25 px
@@ -72,17 +70,21 @@ stylesheet =
             , Font.bold
             ]
         , style Field
-            [ Border.rounded 5
-            , Border.all 1
+            [ Border.all 1
             , Border.solid
-            , Color.border Color.lightGrey
+            , Color.border Color.lightCharcoal
+            ]
+        , style InfoBoxTop
+            [ Color.background Color.lightBlue
+            ]
+        , style InfoBoxBody
+            [ Color.background Color.white
             ]
         , style Box
             [ Transition.all
             , Color.text Color.lightGrey
             , Color.background Color.orange
             , Color.border Color.charcoal
-            , Border.rounded 3 -- round all borders to 3px
             , hover
                 [ Color.text Color.white
                 , Color.background Color.yellow
@@ -100,6 +102,20 @@ stylesheet =
             [ Color.text Color.black
             , Color.background Color.lightGrey
             , Color.border Color.lightGrey
+            ]
+        , style InfoBox
+            [ Color.text Color.darkCharcoal
+            , Color.background Color.white
+            , Color.border Color.darkCharcoal
+            , Font.typeface sansSerif
+            , Border.dashed
+
+            -- , Shadow.box
+            --     { offset = ( 2, 2 )
+            --     , size = 2
+            --     , blur = 3
+            --     , color = Color.gray
+            --     }
             ]
         , style Error
             [ Color.text Color.red

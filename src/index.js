@@ -3,14 +3,14 @@
 // Require index.html so it gets copied to dist
 require('./index.html');
 
+require('./firebase_auth.js');
+
 var Elm = require('./Main.elm');
 var mountNode = document.getElementById('main');
 
 // Initialize Firebase
 firebase.initializeApp(require('../firebase.config'));
 var db = firebase.firestore();
-// var formsRef = database.ref('forms/');
-// var usersRef = database.ref('users/');
 
 // .embed() can take an optional second argument. This would be an object describing the data we need to start a program, i.e. a userID or some token
 var app = Elm.Main.embed(mountNode);
@@ -35,89 +35,72 @@ var ui = null;
 //     })
 // });
 
-// // Get user data from Firebase
-// app.ports.getAllPublicForms.subscribe(function (userId) {
-//     var userId = firebase.auth().currentUser.uid;
-//     return firebase.database().ref('/users/' + userId).once('value');
-// });
+// function getAsList(resultObject) {
+//     if (resultObject instanceof Array) {
+//         // TODO, stoppa in index som id i objektet
+//         return resultObject
+//     }
+//     else if (resultObject instanceof Object) {
+//         return $.map(resultObject, function(value, index) {
+//             value.id = index;
+//             return [value];
+//         });
+//     }
+// }
+
+// function getFirstObject(resultObject) {
+//     if (resultObject instanceof Array) {
+//         for (var i = 0; i< resultObject.length; i++) {
+//             var resultItem = resultObject[i];
+//             if (resultItem != undefined) {
+//                 return resultItem;
+//             }
+//         }
+//     }
+//     else if (resultObject instanceof Object) {
+//         for(var key in resultObject){
+//             if (resultObject[key] != undefined) {
+//                 return resultObject[key];
+//             }
+//         }
+//     }
+// }
 
 // Save user data on Firebase
-// app.ports.getAllPublicForms.subscribe(function (user) {
-//     console.log(user);
-//     firebase.database().ref('users/' + userId).set({
-//         id: user.userId,
-//         email: user.email,
-//         displayName: user.displayName,
-//         imageUrl : user.imageUrl,
-//         userData: {
-//             createdAt: user.createdAt,
-//             updatedAt: user.updatedAt,
-//             orgName: user.orgName,
-//             stripeAccount: user.stripeAccount
-//         }
-//     });
-// });
+app.ports.saveUser.subscribe(function (user) {
+    // console.log('Sparar användaren: ', user);
+    db.collection("users").doc(user.id).set(user)
+    .then(function() {
+        // console.log("Document successfully written!");
+    })
+    .catch(function(error) {
+        console.error("Error writing document: ", error);
+    });
+});
 
-function getAsList(resultObject) {
-    if (resultObject instanceof Array) {
-        // TODO, stoppa in index som id i objektet
-        return resultObject
-    }
-    else if (resultObject instanceof Object) {
-        return $.map(resultObject, function(value, index) {
-            value.id = index;
-            return [value];
-        });
-    }
+
+// Lyssna på events när användaren loggat in eller ut
+firebase.auth().onAuthStateChanged(function(user) {
+    user ? handleSignedInUser(user) : handleSignedOutUser();
+});
+
+
+
+
+let handleSignedOutUser = function() {
+    // User is signed out.
+    // console.log("User signed out")
+    app.ports.userLoggedOut.send(null)
 }
 
-function getFirstObject(resultObject) {
-    if (resultObject instanceof Array) {
-        for (var i = 0; i< resultObject.length; i++) {
-            var resultItem = resultObject[i];
-            if (resultItem != undefined) {
-                return resultItem;
-            }
-        }
-    }
-    else if (resultObject instanceof Object) {
-        for(var key in resultObject){
-            if (resultObject[key] != undefined) {
-                return resultObject[key];
-            }
-        }
-    }
-}
 
 app.ports.logOut.subscribe(() => {
-    console.log("Loggar ut användaren")
+    // console.log("Loggar ut användaren")
     firebase.auth().signOut()
 })
 
 
 app.ports.startAuthUI.subscribe(() => {
-    // FirebaseUI config.
-    var uiConfig = {
-        signInSuccessUrl: '/#/', // TODO, ta in parameter för detta
-        signInFlow: 'popup',
-        signInOptions: [
-            {
-                provider: firebase.auth.GoogleAuthProvider.PROVIDER_ID,
-                scopes: [
-                    'https://www.googleapis.com/auth/plus.login'
-                ],
-                customParameters: {
-                    // Forces account selection even when one account
-                    // is available.
-                    prompt: 'select_account'
-                }
-            },
-            firebase.auth.EmailAuthProvider.PROVIDER_ID // Other providers don't need to be given as object.
-        ],
-        // Terms of service url.
-        tosUrl: '<your-tos-url>'
-    };
-
     if (ui) {
         // console.log("Kör startAuthUI show");
         ui.reset();
@@ -126,6 +109,7 @@ app.ports.startAuthUI.subscribe(() => {
         ui = new firebaseui.auth.AuthUI(firebase.auth());
     }
 
+    // Fördröj start för att containern inte hunnit ritas upp
     requestAnimationFrame(function(){
         // The start method will wait until the DOM is loaded.
         ui.start('#firebaseui-auth-container', uiConfig);
@@ -133,59 +117,72 @@ app.ports.startAuthUI.subscribe(() => {
 })
 
 
-firebase.auth().onAuthStateChanged(function(user) {
-    if (user) {
-        var boxyUser = {
-            "id" : user.uid
-            , "email" : user.email
-            , "displayName" : user.displayName
-            , "imageUrl" : user.photoURL
-            , "createdAt" : null
-            , "updatedAt" : null
-            , "orgName" : null
-        }
-
-        var elemtList = document.querySelectorAll('.firebaseui-container')
-        if (elemtList && elemtList.length > 0) {
-            console.log('Hiding the firebase auth UI container')
-            var container = elemtList[0]
-            container.style.display = 'none';
-        }
-
-        // Request user from firestore
-        var docRef = db.collection("users").doc(user.uid);
-        
-        docRef.get().then(function(doc) {
-            if (doc.exists) {
-                console.log("Document data:", doc.data());
-                boxyUser.orgName = doc.data().orgName;
-                app.ports.userLoggedIn.send(boxyUser);
-            } else {
-                console.log("Did not find user data");
-                app.ports.userLoggedIn.send(boxyUser);
-            }
-        }).catch(function(error) {
-            console.log("Error getting document:", error);
-        });
-    } else {
-        // User is signed out.
-        console.log("User signed out")
-        app.ports.userLoggedOut.send(null)
+let handleSignedInUser = function(user) {
+    var boxyUser = {
+        "id" : user.uid
+        , "email" : user.email
+        , "displayName" : user.displayName
+        , "imageUrl" : user.photoURL
+        , "createdAt" : null
+        , "updatedAt" : null
+        , "orgName" : null
     }
-}, function(error) {
-    console.log(error);
-});
 
-
-// Save user data on Firebase
-app.ports.saveUser.subscribe(function (user) {
-    console.log('Sparar användaren: ', user);
-    db.collection("users").doc(user.id).set(user)
-    .then(function() {
-        console.log("Document successfully written!");
-    })
-    .catch(function(error) {
-        console.error("Error writing document: ", error);
-    });
-});
+    // Request user from firestore
+    var docRef = db.collection("users").doc(user.uid);
     
+    docRef.get().then(function(doc) {
+        if (doc.exists) {
+            // console.log("Document data:", doc.data());
+            boxyUser.orgName = doc.data().orgName;
+            // TODO Sätt ett nytt datum för updatedAt
+            app.ports.userLoggedIn.send(boxyUser);
+        } else {
+            console.log("Did not find user data");
+            // TODO Detta är troligen en nya användare. spara createdAt
+            app.ports.userLoggedIn.send(boxyUser);
+        }
+    }).catch(function(error) {
+        console.log("Error getting document:", error);
+    });
+}
+
+
+// FirebaseUI config.
+let uiConfig =  {
+    'callbacks': {
+      // Called when the user has been successfully signed in.
+      'signInSuccess': function(user, credential, redirectUrl) {
+        hideUi();
+        // Redirect.
+        return true;
+      }
+    },
+    signInSuccessUrl: '/#/', // TODO, ta in parameter för detta
+    signInFlow: 'popup',
+    signInOptions: [
+        {
+            provider: firebase.auth.GoogleAuthProvider.PROVIDER_ID,
+            scopes: [
+                'https://www.googleapis.com/auth/plus.login'
+            ],
+            customParameters: {
+                // Forces account selection even when one account
+                // is available.
+                prompt: 'select_account'
+            }
+        },
+        firebase.auth.EmailAuthProvider.PROVIDER_ID // Other providers don't need to be given as object.
+    ],
+    // Terms of service url.
+    tosUrl: '<your-tos-url>'
+};
+
+
+
+let hideUi = function() {
+    if (ui) {
+        // console.log("Kör hideUi");
+        ui.reset();
+    }
+}

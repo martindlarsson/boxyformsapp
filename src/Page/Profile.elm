@@ -7,6 +7,7 @@ import Element.Attributes exposing (..)
 import BoxyStyle exposing (..)
 import Data.User as User exposing (..)
 import Ports exposing (saveUser)
+import Views.Form as Form exposing (..)
 
 
 -- Msg --
@@ -43,31 +44,27 @@ update msg user =
 
 view : User -> Element Styles variation Msg
 view user =
-    column None
-        [ padding 20 ]
-        [ row None [] [ Element.text "Vi behöver veta lite mer om dig. Var vänlig och fyll i fälten." ]
-        , row None [] [ Element.text (String.append "Användare: " user.displayName) ]
-        , row None [] [ Element.text (String.append "Epost: " user.email) ]
-        , Input.text Field
-            []
-            { onChange = TextChanged OrgName
-            , value =
-                case user.orgName of
-                    Nothing ->
-                        ""
+    let
+        textValue =
+            case user.orgName of
+                Nothing ->
+                    ""
 
-                    Just name ->
-                        name
-            , label =
-                Input.placeholder
-                    { label = Input.labelAbove (el None [ verticalCenter ] (Element.text "Organisation"))
-                    , text = "Din organisation eller ditt namn"
-                    }
-            , options =
-                [ Input.errorBelow (el Error [] (Element.text "Detta fält måste fyllas i"))
+                Just name ->
+                    name
+    in
+        wrappedColumn None
+            [ spacing 20 ]
+            [ --row InfoBox [ padding 10 ] [ Element.text "Jag behöver veta lite mer om dig. Var vänlig och fyll i fälten." ]
+              infoBox "Jag behöver veta lite mer om dig. Var vänlig och fyll i fälten."
+            , wrappedRow None
+                [ padding 20 ]
+                [ Element.text "Detta vet jag redan om dig. Ditt namn är "
+                , Element.text user.displayName
+                , Element.text " och din epost är "
+                , Element.text user.email
+                , Element.text ". Jag skulle även behöva veta namnet på din organisation, eller om du representerar endast dig själv skriver du in ditt namn i fältet nedan."
                 ]
-            }
-        , row Box
-            [ center, verticalCenter, width (px 200), height (px 40), onClick (SaveUser user) ]
-            [ (Element.text "Spara") ]
-        ]
+            , Form.textInput "Organisation" "Namnet på din organisation eller ditt namn" textValue (TextChanged OrgName)
+            , Form.button "Spara" (SaveUser user)
+            ]

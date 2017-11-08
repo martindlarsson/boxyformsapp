@@ -50,7 +50,7 @@ view model =
     in
         Element.viewport stylesheet <|
             grid Main
-                [ padding 20, spacing 10 ]
+                [ spacing 20 ]
                 { columns = [ percent 100 ]
                 , rows = [ px 80, fill ]
                 , cells =
@@ -66,7 +66,7 @@ view model =
                         , height = 1
                         , content =
                             el Page
-                                [ spacing 20, padding 20, paddingTop 50, paddingBottom 50 ]
+                                [ spacing 20, padding 20, paddingBottom 50 ]
                                 (viewPage page model)
                         }
                     ]
@@ -83,7 +83,7 @@ navigation model =
         activePage =
             model.activePage
     in
-        row None
+        row Navigation
             [ spread, paddingXY 80 20 ]
             [ link (routeToString Route.Home) <| el Logo [] (Element.text "BoxyForms")
             , row None
