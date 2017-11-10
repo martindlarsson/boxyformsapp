@@ -1,5 +1,7 @@
 module Main exposing (..)
 
+import Window as Window exposing (..)
+import Task exposing (..)
 import Route exposing (Route, routeToString)
 import Navigation exposing (Location)
 import Json.Decode as Decode exposing (Value)
@@ -10,15 +12,15 @@ import Element.Attributes exposing (..)
 import Html exposing (..)
 import Data.User as User exposing (..)
 import Page.Login as LoginPage exposing (view)
-import Page.Home as HomePage exposing (view)
+import Page.Home as HomePage exposing (view, update, Msg)
 import Page.Profile as ProfilePage exposing (view, update, Msg)
+import Page.NewForm as NewFormPage exposing (view, update, Msg)
 
 
 type alias Model =
     { activePage : Page
     , user : Maybe User
-
-    -- , session : Session
+    , device : Maybe Device -- size of the window classified
     }
 
 
@@ -35,10 +37,9 @@ init : Value -> Location -> ( Model, Cmd Msg )
 init val location =
     ( { activePage = Home
       , user = Nothing
-
-      --   , session = { user = Nothing }
+      , device = Nothing
       }
-    , Cmd.none
+    , Task.perform WindowResize Window.size
     )
 
 
@@ -47,12 +48,15 @@ view model =
     let
         page =
             model.activePage
+
+        device =
+            getDevice model.device
     in
-        Element.viewport stylesheet <|
+        Element.viewport (boxyStylesheet model.device) <|
             grid Main
                 [ spacing 20 ]
                 { columns = [ percent 100 ]
-                , rows = [ px 80, fill ]
+                , rows = [ px 80, px (toFloat (device.height - 80)) ]
                 , cells =
                     [ cell
                         { start = ( 0, 0 )
@@ -111,14 +115,6 @@ signInLink model =
             ]
 
 
-navStyle : Page -> Page -> Styles
-navStyle activePage navPage =
-    if (activePage == navPage) then
-        ActiveNavOption
-    else
-        NavOption
-
-
 viewPage : Page -> Model -> Element Styles variation Msg
 viewPage page model =
     case page of
@@ -126,13 +122,13 @@ viewPage page model =
             Element.text "Sidan inte funnen"
 
         Home ->
-            HomePage.view
+            Element.map HomePageMsg (HomePage.view model.user)
 
         MyForms ->
             Element.text "Mina formulär"
 
         NewForm ->
-            Element.text "Nytt formulär"
+            Element.map NewFormPageMsg (NewFormPage.view model.user)
 
         Profile ->
             let
@@ -156,10 +152,13 @@ viewPage page model =
 
 type Msg
     = NoOp
+    | WindowResize Window.Size
     | SetRoute (Maybe Route)
     | UserLoggedIn Value
     | UserLoggedOut
     | ProfilePageMsg ProfilePage.Msg
+    | HomePageMsg HomePage.Msg
+    | NewFormPageMsg NewFormPage.Msg
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -167,41 +166,67 @@ update msg model =
     let
         _ =
             Debug.log "update" msg
+
+        isUserDataOK =
+            validateUser model.user
+
+        _ =
+            Debug.log "setRoute validateUser" isUserDataOK
     in
         case msg of
             NoOp ->
                 ( model, Cmd.none )
 
+            WindowResize wSize ->
+                ( { model | device = Just (classifyDevice wSize) }, Cmd.none )
+
             SetRoute route ->
-                let
-                    isUserDataOK =
-                        validateUser model.user
+                -- setRoute route model
+                case isUserDataOK of
+                    UserIsOK ->
+                        setRoute route model
 
-                    _ =
-                        Debug.log "setRoute validateUser" isUserDataOK
-                in
-                    case isUserDataOK of
-                        UserIsOK ->
+                    UserNeedsMoreInfo ->
+                        if (route == (Just Route.Home) || route == (Just Route.Logout)) then
                             setRoute route model
+                        else
+                            setRoute (Just Route.Profile) model
 
-                        UserNeedsMoreInfo ->
-                            if (route == (Just Route.Home) || route == (Just Route.Logout)) then
-                                setRoute route model
-                            else
-                                setRoute (Just Route.Profile) model
-
-                        NotLoggedIn ->
-                            if (route == (Just Route.Home)) then
-                                setRoute route model
-                            else
-                                setRoute (Just Route.Login) model
+                    NotLoggedIn ->
+                        if (route == (Just Route.Home)) then
+                            setRoute route model
+                        else
+                            setRoute (Just Route.Login) model
 
             -- En användare har loggat in eller skapats
             UserLoggedIn value ->
-                value
-                    |> Decode.decodeValue User.decoder
-                    |> Result.map (\user -> { model | user = Just user } ! [])
-                    |> Result.withDefault (model ! [])
+                let
+                    loggedInUserResult =
+                        Decode.decodeValue User.decoder value
+
+                    loggedInUser =
+                        case loggedInUserResult of
+                            Ok user ->
+                                Just user
+
+                            Err str ->
+                                Nothing
+
+                    newModel =
+                        { model | user = loggedInUser }
+
+                    isUserDataOK =
+                        validateUser loggedInUser
+                in
+                    case isUserDataOK of
+                        UserIsOK ->
+                            setRoute (Just Route.Home) newModel
+
+                        UserNeedsMoreInfo ->
+                            setRoute (Just Route.Profile) newModel
+
+                        NotLoggedIn ->
+                            setRoute (Just Route.Login) newModel
 
             UserLoggedOut ->
                 let
@@ -221,6 +246,12 @@ update msg model =
                                 ProfilePage.update subMsg user
                         in
                             ( { model | user = Just newUser }, cmd )
+
+            HomePageMsg subMsg ->
+                update (SetRoute (Just Route.NewForm)) model
+
+            NewFormPageMsg subMsg ->
+                ( model, NewFormPage.update subMsg model.user )
 
 
 setRoute : Maybe Route -> Model -> ( Model, Cmd Msg )
@@ -257,6 +288,7 @@ subscriptions model =
     Sub.batch
         [ Ports.userLoggedIn UserLoggedIn
         , Ports.userLoggedOut (\_ -> UserLoggedOut)
+        , Window.resizes (\wSize -> WindowResize wSize)
         ]
 
 
@@ -272,3 +304,25 @@ main =
         , update = update
         , subscriptions = subscriptions
         }
+
+
+
+-- HELPERS --
+
+
+navStyle : Page -> Page -> Styles
+navStyle activePage navPage =
+    if (activePage == navPage) then
+        ActiveNavOption
+    else
+        NavOption
+
+
+getDevice : Maybe Device -> Device
+getDevice device =
+    case device of
+        Nothing ->
+            initialDevice
+
+        Just device ->
+            device

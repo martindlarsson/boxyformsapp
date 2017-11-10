@@ -1,224 +1,81 @@
-module Page.NewForm exposing (view, initialModel, Model, Msg, update, init)
+module Page.NewForm exposing (..)
 
-import Html exposing (..)
-import Html.Attributes exposing (..)
-import Html.Events exposing (..)
-import Data.Form as Form exposing (Form)
-import Data.Session as Session exposing (Session)
-import Views.Form as FormViews
-import Date exposing (Date)
+import Element exposing (..)
+import Element.Attributes exposing (..)
+import BoxyStyle exposing (..)
+import Data.User as User exposing (..)
+import Views.Form as Form exposing (..)
 
 
--- import Date.Extra.Config.Config_en_us exposing (config)
--- import Date.Extra.Format
--- import DateParser
-
-import DateTimePicker
-import DateTimePicker.Css
-import DateTimePicker.Config exposing (Config, DatePickerConfig, TimePickerConfig, defaultDatePickerConfig, defaultDateTimeI18n, defaultDateTimePickerConfig, defaultTimePickerConfig)
-import Css
+-- Msg --
 
 
--- import Html.CssHelpers
--- MODEL --
+type Msg
+    = SaveForm
+    | TextChanged Field String
+
+
+type Field
+    = NoField
+    | FormName
+    | DateFrom
+    | DateTo
 
 
 type alias Model =
-    { newForm : Form
-    , errors : List String
-    , dateOpen : Maybe Date
-    , dateOpenPickerState : DateTimePicker.State
-    , dateClose : Maybe Date
-    , dateClosePickerState : DateTimePicker.State
-    }
-
-
-digitalDateOpenTimePickerConfig : Config (DatePickerConfig TimePickerConfig) Msg
-digitalDateOpenTimePickerConfig =
-    let
-        defaultDateTimeConfig =
-            defaultDateTimePickerConfig DateOpenChanged
-    in
-        { defaultDateTimeConfig
-            | timePickerType = DateTimePicker.Config.Digital
-        }
-
-
-initialModel : Model
-initialModel =
-    { newForm =
-        { id = "new"
-        , name = "Nytt formulär"
-        , description = ""
-        , openDate = ""
-        , closeDate = ""
-        , public = False
-        , imgUrl = ""
-        , orgName = ""
-        , orgId = ""
-        }
-    , errors = []
-    , dateOpen = Nothing
-    , dateOpenPickerState = DateTimePicker.initialState
-    , dateClose = Nothing
-    , dateClosePickerState = DateTimePicker.initialState
-    }
-
-
-init : Session -> Cmd Msg
-init session =
-    Cmd.batch
-        [ DateTimePicker.initialCmd DateOpenChanged DateTimePicker.initialState
-        , DateTimePicker.initialCmd DateCloseChanged DateTimePicker.initialState
-        ]
-
-
-
--- VIEW --
-
-
-view : Session -> Model -> Html Msg
-view session model =
-    div [ class "container page" ]
-        [ div [ class "row" ]
-            [ div [ class "col-md-6 offset-md-3 col-xs-12" ]
-                [ h1 [ class "text-xs-center" ] [ text "Nytt formulär" ]
-
-                -- , FormViews.viewErrors model.errors
-                , editFormView model
-                ]
-            ]
-        ]
-
-
-editFormView : Model -> Html Msg
-editFormView model =
-    let
-        { css } =
-            Css.compile [ DateTimePicker.Css.css ]
-
-        form =
-            model.newForm
-    in
-        Html.form [ onSubmit SubmitForm ]
-            [ Html.node "style" [] [ Html.text css ]
-            , FormViews.input
-                [ class "form-control-lg"
-                , placeholder "Formulärets namn"
-                , onInput (OnInput Name)
-                ]
-                []
-            , FormViews.textarea
-                [ class "form-control-lg"
-                , placeholder "Beskrivning"
-                , onInput (OnInput Description)
-                ]
-                []
-            , label []
-                [ text "Startdatum"
-                , DateTimePicker.dateTimePickerWithConfig
-                    digitalDateOpenTimePickerConfig
-                    []
-                    model.dateOpenPickerState
-                    model.dateOpen
-                ]
-
-            -- , div [ class "form-control" ]
-            --     [ div [ id "datepicker", class "date", onInput (OnInput OpenDate) ] []
-            --     ]
-            -- , FormViews.dateTimePicker
-            --     [ class "form-control-lg"
-            --     , placeholder "Datum när formuläret blir tillgängligt"
-            --     , onInput (OnInput OpenDate)
-            --     ]
-            -- , FormViews.dateTimePicker
-            --     [ class "form-control-lg"
-            --     , placeholder "Datum när formuläret stänger"
-            --     , onInput (OnInput CloseDate)
-            --     ]
-            , FormViews.input
-                [ class "form-control-lg"
-                , placeholder "Publikt"
-                , onInput (OnInput Public)
-                ]
-                []
-            , FormViews.input
-                [ class "form-control-lg"
-                , placeholder "URL till bild"
-                , onInput (OnInput ImgURL)
-                ]
-                []
-            , button [ class "btn btn-lg btn-secondary pull-right" ]
-                [ text "Nästa" ]
-            ]
+    { x : Int }
 
 
 
 -- UPDATE --
 
 
-type InputField
-    = Name
-    | Description
-    | OpenDate
-    | CloseDate
-    | Public
-    | ImgURL
-
-
-
--- Used to identify which date time picker is calling
-
-
-type DateTimePickerInstance
-    = DateClosePicker
-    | DateOpenPicker
-
-
-type Msg
-    = SubmitForm
-    | OnInput InputField String
-    | DateOpenChanged DateTimePicker.State (Maybe Date)
-    | DateCloseChanged DateTimePicker.State (Maybe Date)
-
-
-update : Session -> Msg -> Model -> ( Model, Cmd Msg )
-update session msg model =
-    -- let
-    --     _ =
-    --         Debug.log "update NewForm" msg
-    -- in
+update : Msg -> Maybe User -> Cmd msg
+update msg user =
     case msg of
-        SubmitForm ->
-            ( model, Cmd.none )
+        SaveForm ->
+            Cmd.none
 
-        OnInput inputField inputString ->
-            let
-                oldForm =
-                    model.newForm
-            in
-                case inputField of
-                    Name ->
-                        ( { model | newForm = { oldForm | name = inputString } }, Cmd.none )
+        TextChanged field value ->
+            case field of
+                NoField ->
+                    Cmd.none
 
-                    Description ->
-                        ( { model | newForm = { oldForm | description = inputString } }, Cmd.none )
+                FormName ->
+                    Cmd.none
 
-                    OpenDate ->
-                        ( { model | newForm = { oldForm | openDate = inputString } }, Cmd.none )
+                DateFrom ->
+                    Cmd.none
 
-                    CloseDate ->
-                        ( { model | newForm = { oldForm | closeDate = inputString } }, Cmd.none )
+                DateTo ->
+                    Cmd.none
 
-                    Public ->
-                        -- TODO, konvertera string -> bool
-                        ( { model | newForm = { oldForm | public = False } }, Cmd.none )
 
-                    ImgURL ->
-                        ( { model | newForm = { oldForm | imgUrl = inputString } }, Cmd.none )
 
-        DateOpenChanged pickerState newDate ->
-            ( { model | dateOpen = newDate, dateOpenPickerState = pickerState }, Cmd.none )
+-- VIEW --
 
-        DateCloseChanged pickerState newDate ->
-            ( { model | dateClose = newDate, dateClosePickerState = pickerState }, Cmd.none )
+
+view : Maybe User -> Element Styles variation Msg
+view user =
+    let
+        userForm =
+            case (validateUser user) of
+                UserIsOK ->
+                    empty
+
+                NotLoggedIn ->
+                    empty
+
+                UserNeedsMoreInfo ->
+                    Form.infoBox "Jag vill be dig fylla i detta formulär innan du går vidare och skapar dina egna formulär. Om du inte tillhör en organisation kan du fylla i ditt namn under visningsnamn. Jag använder visningsnamn i dina formulär som författaren av formuläret."
+    in
+        column
+            None
+            [ spacing 20 ]
+            [ paragraph H2 [ padding 10 ] [ text "Skapa nytt formulär" ]
+            , paragraph None [ padding 10 ] [ text "Här skapar du ditt formulär. Först behöver jag veta namnet på formuläret och när det ska vara tillgångt och till vem." ]
+            , userForm
+            , Form.textInput "Namn" "Namnet på formuläret" "" (TextChanged FormName) Enabled
+            , Form.textInput "Från-datum" "Från detta datum kan användare fylla i formuläret" "" (TextChanged DateFrom) Enabled
+            , Form.textInput "Till-datum" "Till och med detta datum kan användare fylla i formuläret" "" (TextChanged DateTo) Enabled
+            ]

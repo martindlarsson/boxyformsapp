@@ -1,8 +1,6 @@
 module Page.Profile exposing (view, update, Msg)
 
 import Element exposing (..)
-import Element.Events exposing (..)
-import Element.Input as Input exposing (..)
 import Element.Attributes exposing (..)
 import BoxyStyle exposing (..)
 import Data.User as User exposing (..)
@@ -15,11 +13,12 @@ import Views.Form as Form exposing (..)
 
 type Msg
     = TextChanged Field String
-    | SaveUser User
+    | SaveUser
 
 
 type Field
-    = OrgName
+    = NoField
+    | OrgName
 
 
 
@@ -31,10 +30,13 @@ update msg user =
     case msg of
         TextChanged field newText ->
             case field of
+                NoField ->
+                    ( user, Cmd.none )
+
                 OrgName ->
                     ( { user | orgName = Just newText }, Cmd.none )
 
-        SaveUser user ->
+        SaveUser ->
             ( user, saveUser (encode user) )
 
 
@@ -45,26 +47,23 @@ update msg user =
 view : User -> Element Styles variation Msg
 view user =
     let
-        textValue =
+        orgName =
             case user.orgName of
                 Nothing ->
                     ""
 
                 Just name ->
                     name
+
+        isUserValid =
+            validateUser (Just user)
     in
-        wrappedColumn None
+        column
+            None
             [ spacing 20 ]
-            [ --row InfoBox [ padding 10 ] [ Element.text "Jag behöver veta lite mer om dig. Var vänlig och fyll i fälten." ]
-              infoBox "Jag behöver veta lite mer om dig. Var vänlig och fyll i fälten."
-            , wrappedRow None
-                [ padding 20 ]
-                [ Element.text "Detta vet jag redan om dig. Ditt namn är "
-                , Element.text user.displayName
-                , Element.text " och din epost är "
-                , Element.text user.email
-                , Element.text ". Jag skulle även behöva veta namnet på din organisation, eller om du representerar endast dig själv skriver du in ditt namn i fältet nedan."
-                ]
-            , Form.textInput "Organisation" "Namnet på din organisation eller ditt namn" textValue (TextChanged OrgName)
-            , Form.button "Spara" (SaveUser user)
+            [ when (isUserValid == UserNeedsMoreInfo) (Form.infoBox "Jag vill be dig fylla i detta formulär innan du går vidare och skapar dina egna formulär. Om du inte tillhör en organisation kan du fylla i ditt namn under visningsnamn. Jag använder visningsnamn i dina formulär som författaren av formuläret.")
+            , Form.textInput "Namn" "Inget" user.displayName (TextChanged NoField) Disabled
+            , Form.textInput "E-post" "Inget" user.email (TextChanged NoField) Disabled
+            , Form.textInput "Visningsnamn" "Namnet på din organisation eller ditt namn" orgName (TextChanged OrgName) Enabled
+            , Form.button "Spara" SaveUser
             ]
