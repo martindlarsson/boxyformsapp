@@ -68,7 +68,14 @@ boxyStylesheet maybeDevice =
                 , Font.lineHeight 1.3 -- line height, given as a ratio of current font size.
                 ]
             , style Navigation
-                [ Color.background Color.lightOrange ]
+                [ Color.background Color.lightOrange
+                , Shadow.box
+                    { offset = ( 0, 0 )
+                    , size = 3
+                    , blur = 4
+                    , color = Color.darkGray
+                    }
+                ]
             , style Page
                 [ Color.text Color.darkCharcoal
                 ]

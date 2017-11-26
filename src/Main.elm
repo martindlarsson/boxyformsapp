@@ -8,7 +8,7 @@ import Json.Decode as Decode exposing (Value)
 import BoxyStyle exposing (..)
 import Ports exposing (..)
 import Element exposing (..)
-import Element.Attributes exposing (..)
+import Element.Attributes as Attr exposing (..)
 import Html exposing (..)
 import Data.User as User exposing (..)
 import Page.Login as LoginPage exposing (view)
@@ -19,6 +19,7 @@ import Page.NewForm as NewFormPage exposing (view, update, Msg)
 
 type alias Model =
     { activePage : Page
+    , activeRoute : Route
     , user : Maybe User
     , device : Maybe Device -- size of the window classified
     }
@@ -27,15 +28,16 @@ type alias Model =
 type Page
     = NotFound
     | Home
-    | NewForm
+    | NewForm NewFormPage.Model
     | MyForms
     | Login
-    | Profile
+    | Profile User
 
 
 init : Value -> Location -> ( Model, Cmd Msg )
 init val location =
     ( { activePage = Home
+      , activeRoute = Route.Home
       , user = Nothing
       , device = Nothing
       }
@@ -51,11 +53,19 @@ view model =
 
         device =
             getDevice model.device
+
+        pageLayout =
+            if (device.phone) then
+                [ Attr.width fill ]
+            else if (device.tablet) then
+                [ Attr.width (px 600), center ]
+            else
+                [ Attr.width (px 800), center ]
     in
         Element.viewport (boxyStylesheet model.device) <|
             grid Main
                 [ spacing 20 ]
-                { columns = [ percent 100 ]
+                { columns = [ fill ]
                 , rows = [ px 80, px (toFloat (device.height - 80)) ]
                 , cells =
                     [ cell
@@ -71,7 +81,11 @@ view model =
                         , content =
                             el Page
                                 [ spacing 20, padding 20, paddingBottom 50 ]
-                                (viewPage page model)
+                                (el
+                                    None
+                                    pageLayout
+                                    (viewPage page model)
+                                )
                         }
                     ]
                 }
@@ -88,10 +102,10 @@ navigation model =
             model.activePage
     in
         row Navigation
-            [ spread, paddingXY 80 20 ]
+            [ spread, paddingXY 80 20, verticalCenter ]
             [ link (routeToString Route.Home) <| el Logo [] (Element.text "BoxyForms")
             , row None
-                [ spacing 20 ]
+                [ spacing 20, center, verticalCenter ]
                 (signInLink model)
             ]
 
@@ -102,15 +116,15 @@ signInLink model =
         user =
             model.user
 
-        activePage =
-            model.activePage
+        activeRoute =
+            model.activeRoute
     in
         if (user == Nothing) then
-            [ link (routeToString Route.Login) <| el (navStyle activePage Login) [] (Element.text "Logga in") ]
+            [ link (routeToString Route.Login) <| el (navStyle activeRoute Route.Login) [] (Element.text "Logga in") ]
         else
-            [ link (routeToString Route.NewForm) <| el (navStyle activePage NewForm) [] (Element.text "Nytt formulär")
-            , link (routeToString Route.MyForms) <| el (navStyle activePage MyForms) [] (Element.text "Mina formulär")
-            , link (routeToString Route.Profile) <| el (navStyle activePage Profile) [] (Element.text "Min profil")
+            [ link (routeToString Route.NewForm) <| el (navStyle activeRoute Route.NewForm) [] (Element.text "Nytt formulär")
+            , link (routeToString Route.MyForms) <| el (navStyle activeRoute Route.MyForms) [] (Element.text "Mina formulär")
+            , link (routeToString Route.Profile) <| el (navStyle activeRoute Route.Profile) [] (Element.text "Min profil")
             , link (routeToString Route.Logout) <| el NavOption [] (Element.text "Logga ut")
             ]
 
@@ -127,20 +141,11 @@ viewPage page model =
         MyForms ->
             Element.text "Mina formulär"
 
-        NewForm ->
-            Element.map NewFormPageMsg (NewFormPage.view model.user)
+        NewForm pageModel ->
+            Element.map NewFormPageMsg (NewFormPage.view pageModel)
 
-        Profile ->
-            let
-                user =
-                    model.user
-            in
-                case user of
-                    Nothing ->
-                        Element.text "ERROR!! det finns ingen inloggad användare..."
-
-                    Just user ->
-                        Element.map ProfilePageMsg (ProfilePage.view user)
+        Profile user ->
+            Element.map ProfilePageMsg (ProfilePage.view user)
 
         Login ->
             LoginPage.view
@@ -158,7 +163,7 @@ type Msg
     | UserLoggedOut
     | ProfilePageMsg ProfilePage.Msg
     | HomePageMsg HomePage.Msg
-    | NewFormPageMsg NewFormPage.Msg
+    | NewFormPageMsg NewFormPage.Msg NewFormPage.Model
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -250,33 +255,51 @@ update msg model =
             HomePageMsg subMsg ->
                 update (SetRoute (Just Route.NewForm)) model
 
-            NewFormPageMsg subMsg ->
-                ( model, NewFormPage.update subMsg model.user )
+            -- NewFormPageMsg subMsg subModel ->
+            --     ( model, NewFormPage.update subMsg subModel )
+            NewFormPageMsg subMsg subModel ->
+                let
+                    ( newFormPageModel, cmd ) =
+                        NewFormPage.update subMsg subModel
+                in
+                    ( { model | activePage = NewForm newFormPageModel }, cmd )
 
 
 setRoute : Maybe Route -> Model -> ( Model, Cmd Msg )
 setRoute maybeRoute model =
     case maybeRoute of
         Nothing ->
-            ( { model | activePage = NotFound }, Cmd.none )
+            ( { model | activePage = NotFound, activeRoute = Route.Home }, Cmd.none )
 
         Just Route.Home ->
-            ( { model | activePage = Home }, Cmd.none )
+            ( { model | activePage = Home, activeRoute = Route.Home }, Cmd.none )
 
         Just Route.Login ->
-            ( { model | activePage = Login }, Ports.startAuthUI () )
+            ( { model | activePage = Login, activeRoute = Route.Login }, Ports.startAuthUI () )
 
         Just Route.Logout ->
-            ( { model | activePage = Home }, Ports.logOut () )
+            ( { model | activePage = Home, activeRoute = Route.Home }, Ports.logOut () )
 
         Just Route.MyForms ->
-            ( { model | activePage = MyForms }, Cmd.none )
+            ( { model | activePage = MyForms, activeRoute = Route.MyForms }, Cmd.none )
 
         Just Route.Profile ->
-            ( { model | activePage = Profile }, Cmd.none )
+            case model.user of
+                Nothing ->
+                    -- TODO set error message!!
+                    ( { model | activePage = Home, activeRoute = Route.Home }, Cmd.none )
+
+                Just logedInUser ->
+                    ( { model | activePage = (Profile logedInUser), activeRoute = Route.Profile }, Cmd.none )
 
         Just Route.NewForm ->
-            ( { model | activePage = NewForm }, Cmd.none )
+            case model.user of
+                Nothing ->
+                    -- TODO set error message!!
+                    ( { model | activePage = Home, activeRoute = Route.Home }, Cmd.none )
+
+                Just logedInUser ->
+                    ( { model | activePage = (NewForm (NewFormPage.init logedInUser)), activeRoute = Route.NewForm }, Cmd.none )
 
 
 
@@ -310,9 +333,9 @@ main =
 -- HELPERS --
 
 
-navStyle : Page -> Page -> Styles
-navStyle activePage navPage =
-    if (activePage == navPage) then
+navStyle : Route -> Route -> Styles
+navStyle activeRoute navRoute =
+    if (activeRoute == navRoute) then
         ActiveNavOption
     else
         NavOption
@@ -326,3 +349,25 @@ getDevice device =
 
         Just device ->
             device
+
+
+pageToString : Page -> String
+pageToString page =
+    case page of
+        NotFound ->
+            "Notfound"
+
+        Home ->
+            "Hem"
+
+        NewForm model ->
+            "Nytt formulär"
+
+        MyForms ->
+            "Mina formulär"
+
+        Login ->
+            "Logga in"
+
+        Profile mode ->
+            "Min profil"

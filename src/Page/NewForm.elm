@@ -4,7 +4,8 @@ import Element exposing (..)
 import Element.Attributes exposing (..)
 import BoxyStyle exposing (..)
 import Data.User as User exposing (..)
-import Views.Form as Form exposing (..)
+import Views.Form as FormView exposing (..)
+import Data.Form exposing (..)
 
 
 -- Msg --
@@ -13,53 +14,81 @@ import Views.Form as Form exposing (..)
 type Msg
     = SaveForm
     | TextChanged Field String
+    | CheckboxChanged Field Bool
 
 
 type Field
     = NoField
     | FormName
+    | Description
     | DateFrom
     | DateTo
+    | Public
 
 
 type alias Model =
-    { x : Int }
+    { form : Form
+    , userState : UserState
+    }
 
 
+init : User -> Model
+init user =
+    { userState = validateUser (Just user)
+    , form = emptyForm user
+    }
 
--- UPDATE --
 
+update : Msg -> Model -> ( Model, Cmd msg )
+update msg model =
+    let
+        oldForm =
+            model.form
+    in
+        case msg of
+            SaveForm ->
+                ( model, Cmd.none )
 
-update : Msg -> Maybe User -> Cmd msg
-update msg user =
-    case msg of
-        SaveForm ->
-            Cmd.none
+            TextChanged NoField value ->
+                ( model, Cmd.none )
 
-        TextChanged field value ->
-            case field of
-                NoField ->
-                    Cmd.none
+            TextChanged FormName value ->
+                ( { model | form = { oldForm | name = value } }, Cmd.none )
 
-                FormName ->
-                    Cmd.none
+            TextChanged Description value ->
+                ( { model | form = { oldForm | description = value } }, Cmd.none )
 
-                DateFrom ->
-                    Cmd.none
+            TextChanged DateFrom value ->
+                ( { model | form = { oldForm | dateFrom = value } }, Cmd.none )
 
-                DateTo ->
-                    Cmd.none
+            TextChanged DateTo value ->
+                ( { model | form = { oldForm | dateTo = value } }, Cmd.none )
+
+            TextChanged _ value ->
+                ( model, Cmd.none )
+
+            CheckboxChanged Public value ->
+                ( { model | form = { oldForm | public = value } }, Cmd.none )
+
+            CheckboxChanged _ value ->
+                ( model, Cmd.none )
 
 
 
 -- VIEW --
 
 
-view : Maybe User -> Element Styles variation Msg
-view user =
+view : Model -> Element Styles variation Msg
+view model =
     let
+        userState =
+            model.userState
+
+        form =
+            model.form
+
         userForm =
-            case (validateUser user) of
+            case (userState) of
                 UserIsOK ->
                     empty
 
@@ -67,15 +96,18 @@ view user =
                     empty
 
                 UserNeedsMoreInfo ->
-                    Form.infoBox "Jag vill be dig fylla i detta formulär innan du går vidare och skapar dina egna formulär. Om du inte tillhör en organisation kan du fylla i ditt namn under visningsnamn. Jag använder visningsnamn i dina formulär som författaren av formuläret."
+                    FormView.infoBox "Jag vill be dig fylla i detta formulär innan du går vidare och skapar dina egna formulär. Om du inte tillhör en organisation kan du fylla i ditt namn under visningsnamn. Jag använder visningsnamn i dina formulär som författaren av formuläret."
     in
         column
             None
             [ spacing 20 ]
-            [ paragraph H2 [ padding 10 ] [ text "Skapa nytt formulär" ]
-            , paragraph None [ padding 10 ] [ text "Här skapar du ditt formulär. Först behöver jag veta namnet på formuläret och när det ska vara tillgångt och till vem." ]
+            [ paragraph H2 [] [ text "Skapa nytt formulär" ]
+            , paragraph None [] [ text "Här skapar du ditt formulär. Först behöver jag veta namnet på formuläret och när det ska vara tillgångt och till vem." ]
             , userForm
-            , Form.textInput "Namn" "Namnet på formuläret" "" (TextChanged FormName) Enabled
-            , Form.textInput "Från-datum" "Från detta datum kan användare fylla i formuläret" "" (TextChanged DateFrom) Enabled
-            , Form.textInput "Till-datum" "Till och med detta datum kan användare fylla i formuläret" "" (TextChanged DateTo) Enabled
+            , FormView.textInput Singleline "Namn" "Namnet på formuläret" form.name (TextChanged FormName) Enabled
+            , FormView.textInput Multiline "Beskrivning" "Beskriv syftet med formuläret" form.description (TextChanged Description) Enabled
+            , FormView.textInput Singleline "Från-datum" "Från detta datum kan användare fylla i formuläret" form.dateFrom (TextChanged DateFrom) Enabled
+            , FormView.textInput Singleline "Till-datum" "Till och med detta datum kan användare fylla i formuläret" form.dateTo (TextChanged DateTo) Enabled
+            , FormView.checkbox "Publikt formulär" (CheckboxChanged Public) form.public
+            , FormView.button "Spara" SaveForm []
             ]

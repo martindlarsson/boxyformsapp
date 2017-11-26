@@ -62,8 +62,8 @@ view user =
             None
             [ spacing 20 ]
             [ when (isUserValid == UserNeedsMoreInfo) (Form.infoBox "Jag vill be dig fylla i detta formulär innan du går vidare och skapar dina egna formulär. Om du inte tillhör en organisation kan du fylla i ditt namn under visningsnamn. Jag använder visningsnamn i dina formulär som författaren av formuläret.")
-            , Form.textInput "Namn" "Inget" user.displayName (TextChanged NoField) Disabled
-            , Form.textInput "E-post" "Inget" user.email (TextChanged NoField) Disabled
-            , Form.textInput "Visningsnamn" "Namnet på din organisation eller ditt namn" orgName (TextChanged OrgName) Enabled
-            , Form.button "Spara" SaveUser
+            , Form.textInput Singleline "Namn" "Inget" user.displayName (TextChanged NoField) Disabled
+            , Form.textInput Singleline "E-post" "Inget" user.email (TextChanged NoField) Disabled
+            , Form.textInput Singleline "Visningsnamn" "Namnet på din organisation eller ditt namn" orgName (TextChanged OrgName) Enabled
+            , Form.button "Spara" SaveUser []
             ]

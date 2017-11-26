@@ -2,18 +2,18 @@ module Data.Form exposing (..)
 
 import Json.Decode exposing (int, string, nullable, bool, Decoder, list, andThen, succeed)
 import Json.Decode.Pipeline exposing (decode, required, optional)
+import Data.User exposing (..)
 
 
 type alias Form =
     { id : FormId
     , name : String
     , description : String
-    , openDate : String
-    , closeDate : String
+    , dateFrom : String
+    , dateTo : String
     , public : Bool
     , imgUrl : String
     , orgName : String
-    , orgId : String
     }
 
 
@@ -25,18 +25,17 @@ type alias FormId =
     String
 
 
-emptyForm : Form
-emptyForm =
-    Form
-        "new form"
-        ""
-        ""
-        ""
-        ""
-        False
-        ""
-        ""
-        ""
+emptyForm : User -> Form
+emptyForm user =
+    { id = "new form"
+    , name = ""
+    , description = ""
+    , dateFrom = ""
+    , dateTo = ""
+    , public = False
+    , imgUrl = ""
+    , orgName = Maybe.withDefault "" user.orgName
+    }
 
 
 decodeForm : Json.Decode.Value -> Result String Form
@@ -65,4 +64,3 @@ jsonFormDecoder =
         |> required "public" bool
         |> required "imgUrl" string
         |> required "orgName" string
-        |> required "orgId" string

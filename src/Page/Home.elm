@@ -48,7 +48,7 @@ view user =
     in
         column None
             []
-            [ paragraph H1 [ padding 10 ] [ text "Hej och välkommen till BoxyForms!" ]
-            , paragraph None [ padding 10 ] [ text "Här kan du skapa formulär för t.ex. anmälan till ditt sportarrangemang eller ert bröllop. Börja med att skapa ett formulär genom att klicka på knappen nedan." ]
-            , Form.button buttonText NewFormMsg
+            [ paragraph H1 [] [ text "Hej och välkommen till BoxyForms!" ]
+            , paragraph None [ paddingTop 20, paddingBottom 40 ] [ text "Här kan du skapa formulär för t.ex. anmälan till ditt sportarrangemang eller ert bröllop. Börja med att skapa ett formulär genom att klicka på knappen nedan." ]
+            , Form.button buttonText NewFormMsg []
             ]
