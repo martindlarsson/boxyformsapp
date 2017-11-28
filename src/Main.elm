@@ -163,7 +163,7 @@ type Msg
     | UserLoggedOut
     | ProfilePageMsg ProfilePage.Msg
     | HomePageMsg HomePage.Msg
-    | NewFormPageMsg NewFormPage.Msg NewFormPage.Model
+    | NewFormPageMsg NewFormPage.Msg
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -177,15 +177,18 @@ update msg model =
 
         _ =
             Debug.log "setRoute validateUser" isUserDataOK
+
+        page =
+            model.activePage
     in
-        case msg of
-            NoOp ->
+        case ( msg, page ) of
+            ( NoOp, _ ) ->
                 ( model, Cmd.none )
 
-            WindowResize wSize ->
+            ( WindowResize wSize, _ ) ->
                 ( { model | device = Just (classifyDevice wSize) }, Cmd.none )
 
-            SetRoute route ->
+            ( SetRoute route, _ ) ->
                 -- setRoute route model
                 case isUserDataOK of
                     UserIsOK ->
@@ -204,7 +207,7 @@ update msg model =
                             setRoute (Just Route.Login) model
 
             -- En användare har loggat in eller skapats
-            UserLoggedIn value ->
+            ( UserLoggedIn value, _ ) ->
                 let
                     loggedInUserResult =
                         Decode.decodeValue User.decoder value
@@ -233,36 +236,33 @@ update msg model =
                         NotLoggedIn ->
                             setRoute (Just Route.Login) newModel
 
-            UserLoggedOut ->
+            ( UserLoggedOut, _ ) ->
                 let
                     updatedModel =
                         { model | user = Nothing }
                 in
                     setRoute (Just Route.Home) updatedModel
 
-            ProfilePageMsg subMsg ->
-                case model.user of
-                    Nothing ->
-                        ( model, Cmd.none )
+            ( ProfilePageMsg subMsg, Profile subModel ) ->
+                let
+                    ( newUser, cmd ) =
+                        ProfilePage.update subMsg subModel
+                in
+                    ( { model | user = Just newUser }, cmd )
 
-                    Just user ->
-                        let
-                            ( newUser, cmd ) =
-                                ProfilePage.update subMsg user
-                        in
-                            ( { model | user = Just newUser }, cmd )
-
-            HomePageMsg subMsg ->
+            ( HomePageMsg subMsg, _ ) ->
                 update (SetRoute (Just Route.NewForm)) model
 
-            -- NewFormPageMsg subMsg subModel ->
-            --     ( model, NewFormPage.update subMsg subModel )
-            NewFormPageMsg subMsg subModel ->
+            ( NewFormPageMsg subMsg, NewForm subModel ) ->
                 let
                     ( newFormPageModel, cmd ) =
                         NewFormPage.update subMsg subModel
                 in
                     ( { model | activePage = NewForm newFormPageModel }, cmd )
+
+            ( _, _ ) ->
+                -- Throw away any stray messages
+                ( model, Cmd.none )
 
 
 setRoute : Maybe Route -> Model -> ( Model, Cmd Msg )
