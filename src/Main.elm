@@ -7,7 +7,8 @@ import Navigation exposing (Location)
 import Json.Decode as Decode exposing (Value)
 import BoxyStyle exposing (..)
 import Ports exposing (..)
-import Element exposing (..)
+import Element as El exposing (..)
+import Element.Keyed as Keyed exposing (..)
 import Element.Attributes as Attr exposing (..)
 import Html exposing (..)
 import Data.User as User exposing (..)
@@ -62,19 +63,19 @@ view model =
             else
                 [ Attr.width (px 800), center ]
     in
-        Element.viewport (boxyStylesheet model.device) <|
-            grid Main
+        El.viewport (boxyStylesheet model.device) <|
+            El.grid Main
                 [ spacing 20 ]
                 { columns = [ fill ]
                 , rows = [ px 80, px (toFloat (device.height - 80)) ]
                 , cells =
-                    [ cell
+                    [ El.cell
                         { start = ( 0, 0 )
                         , width = 1
                         , height = 1
                         , content = navigation model
                         }
-                    , cell
+                    , El.cell
                         { start = ( 0, 1 )
                         , width = 1
                         , height = 1
@@ -101,10 +102,10 @@ navigation model =
         activePage =
             model.activePage
     in
-        row Navigation
+        El.row Navigation
             [ spread, paddingXY 80 20, verticalCenter ]
-            [ link (routeToString Route.Home) <| el Logo [] (Element.text "BoxyForms")
-            , row None
+            [ link (routeToString Route.Home) <| el Logo [] (El.text "BoxyForms")
+            , El.row None
                 [ spacing 20, center, verticalCenter ]
                 (signInLink model)
             ]
@@ -120,12 +121,12 @@ signInLink model =
             model.activeRoute
     in
         if (user == Nothing) then
-            [ link (routeToString Route.Login) <| el (navStyle activeRoute Route.Login) [] (Element.text "Logga in") ]
+            [ link (routeToString Route.Login) <| el (navStyle activeRoute Route.Login) [] (El.text "Logga in") ]
         else
-            [ link (routeToString Route.NewForm) <| el (navStyle activeRoute Route.NewForm) [] (Element.text "Nytt formulär")
-            , link (routeToString Route.MyForms) <| el (navStyle activeRoute Route.MyForms) [] (Element.text "Mina formulär")
-            , link (routeToString Route.Profile) <| el (navStyle activeRoute Route.Profile) [] (Element.text "Min profil")
-            , link (routeToString Route.Logout) <| el NavOption [] (Element.text "Logga ut")
+            [ link (routeToString Route.NewForm) <| el (navStyle activeRoute Route.NewForm) [] (El.text "Nytt formulär")
+            , link (routeToString Route.MyForms) <| el (navStyle activeRoute Route.MyForms) [] (El.text "Mina formulär")
+            , link (routeToString Route.Profile) <| el (navStyle activeRoute Route.Profile) [] (El.text "Min profil")
+            , link (routeToString Route.Logout) <| el NavOption [] (El.text "Logga ut")
             ]
 
 
@@ -133,19 +134,19 @@ viewPage : Page -> Model -> Element Styles variation Msg
 viewPage page model =
     case page of
         NotFound ->
-            Element.text "Sidan inte funnen"
+            El.text "Sidan inte funnen"
 
         Home ->
-            Element.map HomePageMsg (HomePage.view model.user)
+            El.map HomePageMsg (HomePage.view model.user)
 
         MyForms ->
-            Element.text "Mina formulär"
+            El.text "Mina formulär"
 
         NewForm pageModel ->
-            Element.map NewFormPageMsg (NewFormPage.view pageModel)
+            Keyed.row None [] [ ( "new_form", (El.map NewFormPageMsg (NewFormPage.view pageModel)) ) ]
 
         Profile user ->
-            Element.map ProfilePageMsg (ProfilePage.view user)
+            Keyed.row None [] [ ( "profile_page", (El.map ProfilePageMsg (ProfilePage.view user)) ) ]
 
         Login ->
             LoginPage.view

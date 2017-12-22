@@ -29,6 +29,10 @@ type Styles
     | InfoBox
     | InfoBoxTop
     | InfoBoxBody
+    | Hairline
+    | QuestionsView
+    | AddQuestionsView
+    | AddQuestionButton
 
 
 sansSerif : List Font
@@ -85,6 +89,9 @@ boxyStylesheet maybeDevice =
             , style H2
                 [ Font.size 20
                 ]
+            , style Hairline
+                [ Color.background Color.charcoal
+                ]
             , style Label
                 [ Font.size 25
                 , Font.center
@@ -122,12 +129,12 @@ boxyStylesheet maybeDevice =
                 ]
             , style Box
                 [ Transition.all
-                , Color.text Color.lightGrey
-                , Color.background Color.orange
+                , Color.text Color.charcoal
+                , Color.background Color.lightOrange
                 , Color.border Color.charcoal
                 , hover
-                    [ Color.text Color.white
-                    , Color.background Color.yellow
+                    [ Color.text Color.charcoal
+                    , Color.background Color.lightBlue
                     , Color.border Color.charcoal
                     , cursor "pointer"
                     ]
@@ -152,5 +159,16 @@ boxyStylesheet maybeDevice =
                 ]
             , style Error
                 [ Color.text Color.red
+                ]
+            , style QuestionsView
+                []
+            , style AddQuestionsView
+                [ Font.size 40
+                , Color.text Color.darkGray
+
+                -- , hover [ Color.text Color.lightOrange ]
+                ]
+            , style AddQuestionButton
+                [ hover [ Color.text Color.lightOrange ]
                 ]
             ]
