@@ -33,6 +33,8 @@ type Styles
     | QuestionsView
     | AddQuestionsView
     | AddQuestionButton
+    | IconButton
+    | QuestionView
 
 
 sansSerif : List Font
@@ -165,10 +167,21 @@ boxyStylesheet maybeDevice =
             , style AddQuestionsView
                 [ Font.size 40
                 , Color.text Color.darkGray
-
-                -- , hover [ Color.text Color.lightOrange ]
                 ]
             , style AddQuestionButton
                 [ hover [ Color.text Color.lightOrange ]
+                ]
+            , style IconButton
+                [ Color.text Color.lightCharcoal
+                , hover [ Color.text Color.charcoal ]
+                ]
+            , style QuestionView
+                [ Color.background Color.lightOrange
+                , Shadow.box
+                    { offset = ( 5, 5 )
+                    , size = 3
+                    , blur = 20
+                    , color = Color.darkGray
+                    }
                 ]
             ]

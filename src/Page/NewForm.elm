@@ -7,15 +7,9 @@ import BoxyStyle exposing (..)
 import Data.User as User exposing (..)
 import Views.Form as FormView exposing (..)
 import Data.Form exposing (..)
-
-
--- import FontAwesome.Web as Icon
-
 import FeatherIcons
 
 
--- import Html exposing (..)
--- import Html.Attributes exposing (title)
 -- Msg --
 
 
@@ -24,6 +18,9 @@ type Msg
     | TextChanged Field String
     | CheckboxChanged Field Bool
     | AddQuestion QuestionType
+    | AddQuestionControlHover ControlIndex
+    | AddQuestionControlNoHover
+    | DummyMessage
 
 
 type Field
@@ -33,6 +30,7 @@ type Field
     | DateFrom
     | DateTo
     | Public
+    | FormField
 
 
 type QuestionType
@@ -45,13 +43,24 @@ type QuestionType
 type alias Model =
     { form : Form
     , userState : UserState
+    , controlHoverState : ControlHover
     }
+
+
+type ControlHover
+    = NoControl
+    | Hovering ControlIndex
+
+
+type alias ControlIndex =
+    Int
 
 
 init : User -> Model
 init user =
     { userState = validateUser (Just user)
     , form = emptyForm user
+    , controlHoverState = NoControl
     }
 
 
@@ -92,6 +101,15 @@ update msg model =
             AddQuestion qType ->
                 ( updateAddQuestion qType model, Cmd.none )
 
+            AddQuestionControlHover controlIndex ->
+                ( { model | controlHoverState = Hovering controlIndex }, Cmd.none )
+
+            AddQuestionControlNoHover ->
+                ( { model | controlHoverState = NoControl }, Cmd.none )
+
+            DummyMessage ->
+                ( model, Cmd.none )
+
 
 updateAddQuestion : QuestionType -> Model -> Model
 updateAddQuestion questionType model =
@@ -108,8 +126,11 @@ view model =
         None
         [ spacing 20 ]
         ((formMetadataView model)
-            -- ++ [ hairline Hairline ]
             ++ (questionsView model)
+            ++ [ questionView { id = "", questionText = "textfråga", questionType = TextType } 1 ]
+            ++ [ questionView { id = "", questionText = "infofråga", questionType = InfoType } 1 ]
+            ++ [ questionView { id = "", questionText = "val", questionType = (ChoiceType []) } 1 ]
+            ++ [ questionView { id = "", questionText = "ja eller nej", questionType = YesNoType } 1 ]
             ++ [ FormView.button "Spara" SaveForm [] ]
         )
 
@@ -148,26 +169,114 @@ formMetadataView model =
 questionsView : Model -> List (Element Styles variation Msg)
 questionsView model =
     [ column QuestionsView
-        []
-        [ addQuestionView ]
+        [ onMouseEnter (AddQuestionControlHover 0), onMouseLeave AddQuestionControlNoHover ]
+        [ addQuestionView model 0 ]
     ]
 
 
-addQuestionView : Element Styles variation Msg
-addQuestionView =
-    row AddQuestionsView
-        [ center, spacing 20, padding 5, verticalCenter ]
-        [ addQuestionButton FeatherIcons.plusCircle "Lägg till..." (AddQuestion Info)
-        , addQuestionButton FeatherIcons.alignJustify "Text" (AddQuestion Text)
-        , addQuestionButton FeatherIcons.chevronDown "Lista med alternativ" (AddQuestion Choice)
-        , addQuestionButton FeatherIcons.checkCircle "Ja/Nej" (AddQuestion YesNo)
-        , addQuestionButton FeatherIcons.info "Information" (AddQuestion Info)
-        ]
+addQuestionView : Model -> ControlIndex -> Element Styles variation Msg
+addQuestionView model index =
+    let
+        plus =
+            [ addQuestionButton FeatherIcons.plusCircle "Lägg till..." (AddQuestion Info) ]
+
+        allControls =
+            [ addQuestionButton FeatherIcons.alignJustify "Text" (AddQuestion Text)
+            , addQuestionButton FeatherIcons.chevronDown "Lista med alternativ" (AddQuestion Choice)
+            , addQuestionButton FeatherIcons.checkCircle "Ja/Nej" (AddQuestion YesNo)
+            , addQuestionButton FeatherIcons.info "Information" (AddQuestion Info)
+            ]
+
+        controls =
+            case (model.controlHoverState) of
+                NoControl ->
+                    plus
+
+                Hovering controlIndex ->
+                    if (controlIndex == index) then
+                        allControls
+                    else
+                        plus
+    in
+        row AddQuestionsView
+            [ center, spacing 30, padding 5, verticalCenter ]
+            controls
 
 
 addQuestionButton : FeatherIcons.Icon -> String -> Msg -> Element Styles variation Msg
 addQuestionButton icon titleText msg =
     Element.el AddQuestionButton
+        [ onClick msg ]
+        (Element.html
+            (icon |> FeatherIcons.toHtml [])
+        )
+
+
+questionView : Question -> Int -> Element Styles variation Msg
+questionView question questionIndex =
+    let
+        questionType =
+            question.questionType
+
+        questionContent =
+            case questionType of
+                TextType ->
+                    infoQuestion question
+
+                InfoType ->
+                    infoQuestion question
+
+                ChoiceType choices ->
+                    infoQuestion question
+
+                YesNoType ->
+                    infoQuestion question
+    in
+        Element.grid QuestionView
+            [ spacing 10, padding 10 ]
+            { columns = [ fill, (px 50) ]
+            , rows = [ fill ]
+            , cells =
+                [ Element.cell
+                    { start = ( 0, 0 )
+                    , width = 1
+                    , height = 1
+                    , content = questionContent
+                    }
+                , Element.cell
+                    { start = ( 1, 0 )
+                    , width = 1
+                    , height = 1
+                    , content = questionButtons questionIndex
+                    }
+                ]
+            }
+
+
+infoQuestion : Question -> Element Styles variation Msg
+infoQuestion question =
+    FormView.textInput
+        Multiline
+        "Informationstext"
+        "Här kan du skriva en informativ text som hjälper användaren."
+        question.questionText
+        (TextChanged FormField)
+        Enabled
+
+
+questionButtons : Int -> Element Styles variation Msg
+questionButtons questionIndex =
+    Element.column None
+        [ center, verticalCenter, padding 5, spacing 10 ]
+        [ (iconButton FeatherIcons.arrowUp "Flytta upp" DummyMessage)
+        , (iconButton FeatherIcons.trash2 "Radera" DummyMessage)
+        , (iconButton FeatherIcons.arrowDown "Flytta ned" DummyMessage)
+        ]
+
+
+iconButton : FeatherIcons.Icon -> String -> Msg -> Element Styles variation Msg
+iconButton icon titleText msg =
+    Element.el IconButton
         [ onClick msg ]
         (Element.html
             (icon |> FeatherIcons.toHtml [])
