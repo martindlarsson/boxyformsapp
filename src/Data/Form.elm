@@ -4,6 +4,7 @@ module Data.Form exposing (..)
 -- import Json.Decode.Pipeline exposing (decode, required, optional)
 
 import Data.User exposing (..)
+import Array exposing (..)
 
 
 type alias Form =
@@ -15,7 +16,7 @@ type alias Form =
     , public : Bool
     , imgUrl : String
     , orgName : String
-    , questions : List Question
+    , questions : Array Question
     }
 
 
@@ -40,7 +41,7 @@ type alias Choice =
 
 
 
--- TODO add Tags list
+-- TODO add lista med taggar (vilken typ av event)
 
 
 emptyForm : User -> Form
@@ -53,7 +54,15 @@ emptyForm user =
     , public = False
     , imgUrl = ""
     , orgName = Maybe.withDefault "" user.orgName
-    , questions = []
+    , questions = Array.empty
+    }
+
+
+emptyQuestion : QuestionType -> Question
+emptyQuestion qType =
+    { id = "new" -- toString (Random.int Random.minInt Random.maxInt)
+    , questionText = ""
+    , questionType = qType
     }
 
 
@@ -79,3 +88,60 @@ emptyForm user =
 --         |> required "imgUrl" string
 --         |> required "orgName" string
 --         |> required "questions" (List Question)
+-- Helper functions
+
+
+getItemWitId : Array Question -> String -> Int -> Maybe ( Question, Int )
+getItemWitId questions id startIndex =
+    case (Array.isEmpty questions) of
+        True ->
+            Nothing
+
+        False ->
+            let
+                maybeFirstQuestion =
+                    Array.get 0 questions
+
+                arrayLenght =
+                    Array.length questions
+
+                restQuestions =
+                    Array.slice 1 arrayLenght questions
+            in
+                case maybeFirstQuestion of
+                    Nothing ->
+                        Nothing
+
+                    Just firstQuestion ->
+                        if (firstQuestion.id == id) then
+                            Just ( firstQuestion, startIndex )
+                        else
+                            getItemWitId restQuestions id (startIndex + 1)
+
+
+getItemIndex : Array Question -> Question -> Int -> Maybe Int
+getItemIndex questions question startIndex =
+    case (Array.isEmpty questions) of
+        True ->
+            Nothing
+
+        False ->
+            let
+                maybeFirstQuestion =
+                    Array.get 0 questions
+
+                arrayLenght =
+                    Array.length questions
+
+                restQuestions =
+                    Array.slice 1 arrayLenght questions
+            in
+                case maybeFirstQuestion of
+                    Nothing ->
+                        Nothing
+
+                    Just firstQuestion ->
+                        if (firstQuestion.id == question.id) then
+                            Just startIndex
+                        else
+                            getItemIndex restQuestions question (startIndex + 1)

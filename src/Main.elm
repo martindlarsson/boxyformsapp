@@ -259,7 +259,7 @@ update msg model =
                     ( newFormPageModel, cmd ) =
                         NewFormPage.update subMsg subModel
                 in
-                    ( { model | activePage = NewForm newFormPageModel }, cmd )
+                    ( { model | activePage = NewForm newFormPageModel }, Cmd.map NewFormPageMsg cmd )
 
             ( _, _ ) ->
                 -- Throw away any stray messages
