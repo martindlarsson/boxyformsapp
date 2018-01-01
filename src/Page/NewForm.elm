@@ -25,6 +25,7 @@ type Msg
     | AddQuestionControlNoHover
     | DummyMessage
     | NewRandomId Int
+    | UpdateQuestionText QuestionId String
 
 
 type Field
@@ -35,14 +36,6 @@ type Field
     | DateTo
     | Public
     | FormField
-
-
-
--- type QuestionType
---     = Info
---     | Text
---     | Choice
---     | YesNo
 
 
 type alias Model =
@@ -117,6 +110,37 @@ update msg model =
 
             DummyMessage ->
                 ( model, Cmd.none )
+
+            UpdateQuestionText questionId questionText ->
+                let
+                    questions =
+                        model.form.questions
+
+                    newQuestions =
+                        updateQuestionText questions questionId questionText
+                in
+                    ( { model | form = { oldForm | questions = newQuestions } }, Cmd.none )
+
+
+updateQuestionText : Array Question -> QuestionId -> String -> Array Question
+updateQuestionText oldQuestions questionId newQuestionString =
+    let
+        maybeQuestionTuple =
+            getItemWitId oldQuestions questionId 0
+    in
+        case maybeQuestionTuple of
+            Nothing ->
+                oldQuestions
+
+            Just ( question, questionIndex ) ->
+                let
+                    newQuestion =
+                        { question | questionText = newQuestionString }
+
+                    _ =
+                        Debug.log "updateQuestionText" newQuestion
+                in
+                    Array.set questionIndex newQuestion oldQuestions
 
 
 updateAddQuestion : QuestionType -> ControlIndex -> Array Question -> Array Question
@@ -214,7 +238,7 @@ questionsView : ControlHover -> Array Question -> Element Styles variation Msg
 questionsView hoverState questions =
     let
         questionViews =
-            Array.map (\q -> (questionTuple hoverState q (getItemIndex questions q 0))) questions
+            Array.map (\q -> (questionTuple hoverState q (getItemIndex questions q 1))) questions
     in
         column QuestionsView
             []
@@ -287,16 +311,16 @@ questionView question questionIndex =
         questionContent =
             case questionType of
                 TextType ->
-                    infoQuestion question
+                    textQuestion question
 
                 InfoType ->
                     infoQuestion question
 
                 ChoiceType choices ->
-                    infoQuestion question
+                    choiceQuestion question
 
                 YesNoType ->
-                    infoQuestion question
+                    yesNoQuestion question
     in
         Element.grid QuestionView
             [ spacing 10, padding 10 ]
@@ -326,7 +350,40 @@ infoQuestion question =
         "Informationstext"
         "Här kan du skriva en informativ text som hjälper användaren."
         question.questionText
-        (TextChanged FormField)
+        (UpdateQuestionText question.id)
+        Enabled
+
+
+textQuestion : Question -> Element Styles variation Msg
+textQuestion question =
+    FormView.textInput
+        Multiline
+        "Textfråga"
+        "Frågetext"
+        question.questionText
+        (UpdateQuestionText question.id)
+        Enabled
+
+
+yesNoQuestion : Question -> Element Styles variation Msg
+yesNoQuestion question =
+    FormView.textInput
+        Multiline
+        "Ja/Nej-fråga"
+        "Frågetext"
+        question.questionText
+        (UpdateQuestionText question.id)
+        Enabled
+
+
+choiceQuestion : Question -> Element Styles variation Msg
+choiceQuestion question =
+    FormView.textInput
+        Multiline
+        "Flervalsfråga"
+        "Frågetext"
+        question.questionText
+        (UpdateQuestionText question.id)
         Enabled
 
 

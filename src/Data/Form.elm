@@ -20,8 +20,12 @@ type alias Form =
     }
 
 
+type alias QuestionId =
+    String
+
+
 type alias Question =
-    { id : String
+    { id : QuestionId
     , questionText : String
     , questionType : QuestionType
     }
@@ -91,7 +95,7 @@ emptyQuestion qType =
 -- Helper functions
 
 
-getItemWitId : Array Question -> String -> Int -> Maybe ( Question, Int )
+getItemWitId : Array Question -> QuestionId -> Int -> Maybe ( Question, Int )
 getItemWitId questions id startIndex =
     case (Array.isEmpty questions) of
         True ->
