@@ -143,25 +143,56 @@ updateQuestionText oldQuestions questionId newQuestionString =
                     Array.set questionIndex newQuestion oldQuestions
 
 
+type InArrayPosition
+    = First
+    | Middle
+    | Last
+
+
 updateAddQuestion : QuestionType -> ControlIndex -> Array Question -> Array Question
 updateAddQuestion qType index oldQuestions =
     let
         arrayLength =
             Array.length oldQuestions
 
-        firstHalf =
-            Array.slice 0 index oldQuestions
+        inArrayPosition =
+            if (index == 0) then
+                First
+            else if (arrayLength == index) then
+                Last
+            else
+                Middle
 
-        secondHalf =
-            Array.slice index arrayLength oldQuestions
-
-        newFirstHalf =
-            Array.append firstHalf (fromList [ emptyQuestion qType ])
-
-        newArray =
-            Array.append newFirstHalf secondHalf
+        _ =
+            Debug.log "updateAddQuestion" ("arrayLenth: " ++ (toString arrayLength) ++ ", index: " ++ (toString index) ++ " position: " ++ (toString inArrayPosition))
     in
-        newArray
+        case inArrayPosition of
+            First ->
+                Array.append (Array.fromList [ emptyQuestion qType ]) oldQuestions
+
+            Middle ->
+                let
+                    firstHalf =
+                        Array.slice 0 index oldQuestions
+
+                    secondHalf =
+                        Array.slice index arrayLength oldQuestions
+
+                    newFirstHalf =
+                        Array.append firstHalf (fromList [ emptyQuestion qType ])
+
+                    newArray =
+                        Array.append newFirstHalf secondHalf
+
+                    -- _ =
+                    --     Debug.log "Add q middle, firstHalf" firstHalf
+                    -- _ =
+                    --     Debug.log "Add q middle, secondHalf" secondHalf
+                in
+                    newArray
+
+            Last ->
+                Array.push (emptyQuestion qType) oldQuestions
 
 
 updateQuestionId : Int -> Array Question -> Array Question
@@ -194,7 +225,7 @@ view model =
     in
         column
             None
-            []
+            [ spacing 10 ]
             [ formMetadataView model
             , questionsView model.controlHoverState form.questions
             , FormView.button "Spara" SaveForm []
@@ -221,9 +252,9 @@ formMetadataView model =
                 UserNeedsMoreInfo ->
                     FormView.infoBox "Jag vill be dig fylla i detta formulär innan du går vidare och skapar dina egna formulär. Om du inte tillhör en organisation kan du fylla i ditt namn under visningsnamn. Jag använder visningsnamn i dina formulär som författaren av formuläret."
     in
-        column None
+        column FormMetadataView
             [ spacing 10 ]
-            [ paragraph H2 [] [ Element.text "Skapa nytt formulär" ]
+            [ paragraph H1 [] [ Element.text "Skapa nytt formulär" ]
             , paragraph None [] [ Element.text "Här skapar du ditt formulär. Först behöver jag veta namnet på formuläret och när det ska vara tillgångt och till vem." ]
             , userForm
             , FormView.textInput Singleline "Namn" "Namnet på formuläret" form.name (TextChanged FormName) Enabled
@@ -264,17 +295,14 @@ questionTuple hoverState question maybeIndex =
 addQuestionView : ControlHover -> ControlIndex -> Element Styles variation Msg
 addQuestionView hoverState index =
     let
-        nextIndex =
-            index + 1
-
         plus =
-            [ addQuestionButton FeatherIcons.plusCircle "Lägg till..." (AddQuestion InfoType nextIndex) ]
+            [ addQuestionButton FeatherIcons.plusCircle "Lägg till fråga" (AddQuestion InfoType index) ]
 
         allControls =
-            [ addQuestionButton FeatherIcons.alignJustify "Text" (AddQuestion TextType nextIndex)
-            , addQuestionButton FeatherIcons.chevronDown "Lista med alternativ" (AddQuestion (ChoiceType []) nextIndex)
-            , addQuestionButton FeatherIcons.checkCircle "Ja/Nej" (AddQuestion YesNoType nextIndex)
-            , addQuestionButton FeatherIcons.info "Information" (AddQuestion InfoType nextIndex)
+            [ addQuestionButton FeatherIcons.alignJustify "Text" (AddQuestion TextType index)
+            , addQuestionButton FeatherIcons.chevronDown "Val" (AddQuestion (ChoiceType []) index)
+            , addQuestionButton FeatherIcons.checkCircle "Ja/Nej" (AddQuestion YesNoType index)
+            , addQuestionButton FeatherIcons.info "Info" (AddQuestion InfoType index)
             ]
 
         controls =
@@ -289,17 +317,21 @@ addQuestionView hoverState index =
                         plus
     in
         row AddQuestionsView
-            [ center, spacing 30, padding 5, verticalCenter, onMouseEnter (AddQuestionControlHover index), onMouseLeave AddQuestionControlNoHover ]
+            [ center, spacingXY 30 0, padding 5, verticalCenter, onMouseEnter (AddQuestionControlHover index), onMouseLeave AddQuestionControlNoHover ]
             controls
 
 
 addQuestionButton : FeatherIcons.Icon -> String -> Msg -> Element Styles variation Msg
 addQuestionButton icon titleText msg =
-    Element.el AddQuestionButton
-        [ onClick msg, Element.Attributes.toAttr (Html.Attributes.title titleText) ]
-        (Element.html
-            (icon |> FeatherIcons.toHtml [])
-        )
+    Element.column None
+        [ verticalCenter, center ]
+        [ Element.el AddQuestionButton
+            [ onClick msg, Element.Attributes.toAttr (Html.Attributes.title titleText) ]
+            (Element.html
+                (icon |> FeatherIcons.toHtml [])
+            )
+        , Element.el AddQuestionsSubView [] (Element.text titleText)
+        ]
 
 
 questionView : Question -> Int -> Element Styles variation Msg
@@ -404,3 +436,17 @@ iconButton icon titleText msg =
         (Element.html
             (icon |> FeatherIcons.toHtml [])
         )
+
+
+
+-- iconButton : FeatherIcons.Icon -> String -> Msg -> Element Styles variation Msg
+-- iconButton icon titleText msg =
+--     column None
+--         [ verticalCenter, height (px 300) ]
+--         [ Element.el IconButton
+--             [ onClick msg ]
+--             (Element.html
+--                 (icon |> FeatherIcons.toHtml [])
+--             )
+--         , Element.text titleText
+--         ]

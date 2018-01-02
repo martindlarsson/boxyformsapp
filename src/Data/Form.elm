@@ -125,27 +125,13 @@ getItemWitId questions id startIndex =
 
 getItemIndex : Array Question -> Question -> Int -> Maybe Int
 getItemIndex questions question startIndex =
-    case (Array.isEmpty questions) of
-        True ->
-            Nothing
+    let
+        maybeQuestion =
+            getItemWitId questions question.id startIndex
+    in
+        case maybeQuestion of
+            Nothing ->
+                Nothing
 
-        False ->
-            let
-                maybeFirstQuestion =
-                    Array.get 0 questions
-
-                arrayLenght =
-                    Array.length questions
-
-                restQuestions =
-                    Array.slice 1 arrayLenght questions
-            in
-                case maybeFirstQuestion of
-                    Nothing ->
-                        Nothing
-
-                    Just firstQuestion ->
-                        if (firstQuestion.id == question.id) then
-                            Just startIndex
-                        else
-                            getItemIndex restQuestions question (startIndex + 1)
+            Just ( question, questionIndex ) ->
+                Just questionIndex

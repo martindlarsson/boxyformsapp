@@ -32,9 +32,11 @@ type Styles
     | Hairline
     | QuestionsView
     | AddQuestionsView
+    | AddQuestionsSubView
     | AddQuestionButton
     | IconButton
     | QuestionView
+    | FormMetadataView
 
 
 sansSerif : List Font
@@ -86,10 +88,12 @@ boxyStylesheet maybeDevice =
                 [ Color.text Color.darkCharcoal
                 ]
             , style H1
-                [ Font.size 25
+                [ Font.size 30
+                , Color.text Color.lightCharcoal
                 ]
             , style H2
-                [ Font.size 20
+                [ Font.size 25
+                , Color.text Color.lightCharcoal
                 ]
             , style Hairline
                 [ Color.background Color.charcoal
@@ -168,12 +172,22 @@ boxyStylesheet maybeDevice =
                 [ Font.size 40
                 , Color.text Color.darkGray
                 ]
+            , style AddQuestionsSubView
+                [ Font.size 10
+                , Color.text Color.darkGray
+                ]
             , style AddQuestionButton
-                [ hover [ Color.text Color.lightOrange ]
+                [ hover
+                    [ Color.text Color.lightOrange
+                    , cursor "pointer"
+                    ]
                 ]
             , style IconButton
                 [ Color.text Color.lightCharcoal
-                , hover [ Color.text Color.charcoal ]
+                , hover
+                    [ Color.text Color.charcoal
+                    , cursor "pointer"
+                    ]
                 ]
             , style QuestionView
                 [ Color.background Color.lightOrange
@@ -184,4 +198,6 @@ boxyStylesheet maybeDevice =
                     , color = Color.darkGray
                     }
                 ]
+            , style FormMetadataView
+                []
             ]
