@@ -176,9 +176,8 @@ update msg model =
         isUserDataOK =
             validateUser model.user
 
-        _ =
-            Debug.log "setRoute validateUser" isUserDataOK
-
+        -- _ =
+        --     Debug.log "setRoute validateUser" isUserDataOK
         page =
             model.activePage
     in
@@ -300,7 +299,16 @@ setRoute maybeRoute model =
                     ( { model | activePage = Home, activeRoute = Route.Home }, Cmd.none )
 
                 Just logedInUser ->
-                    ( { model | activePage = (NewForm (NewFormPage.init logedInUser)), activeRoute = Route.NewForm }, Cmd.none )
+                    let
+                        device =
+                            case model.device of
+                                Nothing ->
+                                    initialDevice
+
+                                Just currentDevice ->
+                                    currentDevice
+                    in
+                        ( { model | activePage = (NewForm (NewFormPage.init logedInUser device)), activeRoute = Route.NewForm }, Cmd.none )
 
 
 

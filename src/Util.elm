@@ -1,8 +1,9 @@
-module Util exposing ((=>), appendErrors, onClickStopPropagation, pair, viewIf)
+module Util exposing (..)
 
 import Html exposing (Attribute, Html)
 import Html.Events exposing (defaultOptions, onWithOptions)
 import Json.Decode as Decode
+import Array exposing (..)
 
 
 (=>) : a -> b -> ( a, b )
@@ -46,3 +47,121 @@ onClickStopPropagation msg =
 appendErrors : { model | errors : List error } -> List error -> { model | errors : List error }
 appendErrors model errors =
     { model | errors = model.errors ++ errors }
+
+
+
+-- Array util functions
+
+
+type InArrayPosition
+    = First
+    | Middle
+    | Last
+    | OutOfBounds
+
+
+getArrayPosition : Int -> Array a -> InArrayPosition
+getArrayPosition itemIndex array =
+    let
+        arrayLength =
+            Array.length array
+    in
+        if (itemIndex == 0) then
+            First
+        else if (itemIndex == arrayLength - 1) then
+            Last
+        else if (itemIndex > 0 && itemIndex < arrayLength - 1) then
+            Middle
+        else
+            OutOfBounds
+
+
+getArrayPositionForInsertion : Int -> Array a -> InArrayPosition
+getArrayPositionForInsertion itemIndex array =
+    let
+        arrayLength =
+            Array.length array
+    in
+        if (itemIndex == 0) then
+            First
+        else if (itemIndex == arrayLength) then
+            Last
+        else if (itemIndex > 0 && itemIndex < arrayLength) then
+            Middle
+        else
+            OutOfBounds
+
+
+moveItemUp : Int -> Array a -> Array a
+moveItemUp itemIndex oldArray =
+    let
+        arrayPosition =
+            getArrayPosition itemIndex oldArray
+    in
+        case arrayPosition of
+            First ->
+                oldArray
+
+            OutOfBounds ->
+                oldArray
+
+            _ ->
+                let
+                    maybeItemToMove =
+                        Array.get itemIndex oldArray
+                in
+                    case maybeItemToMove of
+                        Nothing ->
+                            oldArray
+
+                        Just itemToMove ->
+                            let
+                                maybeItemToSwitch =
+                                    Array.get (itemIndex - 1) oldArray
+                            in
+                                case maybeItemToSwitch of
+                                    Nothing ->
+                                        oldArray
+
+                                    Just itemToSwitch ->
+                                        let
+                                            intermediateArray =
+                                                Array.set (itemIndex - 1) itemToMove oldArray
+
+                                            newArray =
+                                                Array.set itemIndex itemToSwitch intermediateArray
+                                        in
+                                            newArray
+
+
+insertItemIntoArray : a -> Int -> Array a -> Array a
+insertItemIntoArray itemToInsert atIndex oldArray =
+    let
+        inArrayPosition =
+            getArrayPositionForInsertion atIndex oldArray
+    in
+        case inArrayPosition of
+            First ->
+                Array.append (Array.fromList [ itemToInsert ]) oldArray
+
+            Middle ->
+                let
+                    firstHalf =
+                        Array.slice 0 atIndex oldArray
+
+                    secondHalf =
+                        Array.slice atIndex (Array.length oldArray) oldArray
+
+                    newFirstHalf =
+                        Array.append firstHalf (fromList [ itemToInsert ])
+
+                    newArray =
+                        Array.append newFirstHalf secondHalf
+                in
+                    newArray
+
+            Last ->
+                Array.push itemToInsert oldArray
+
+            OutOfBounds ->
+                oldArray

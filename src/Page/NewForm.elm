@@ -11,6 +11,7 @@ import FeatherIcons
 import Array exposing (..)
 import Random exposing (..)
 import Html.Attributes exposing (title)
+import Util exposing (..)
 
 
 -- Msg --
@@ -26,6 +27,9 @@ type Msg
     | DummyMessage
     | NewRandomId Int
     | UpdateQuestionText QuestionId String
+    | MoveQuestionUp QuestionIndex
+    | MoveQuestionDown QuestionIndex
+    | RemoveQuestion QuestionIndex
 
 
 type Field
@@ -42,6 +46,7 @@ type alias Model =
     { form : Form
     , userState : UserState
     , controlHoverState : ControlHover
+    , device : Device
     }
 
 
@@ -54,11 +59,16 @@ type alias ControlIndex =
     Int
 
 
-init : User -> Model
-init user =
+type alias QuestionIndex =
+    Int
+
+
+init : User -> Device -> Model
+init user device =
     { userState = validateUser (Just user)
     , form = emptyForm user
     , controlHoverState = NoControl
+    , device = device
     }
 
 
@@ -121,6 +131,34 @@ update msg model =
                 in
                     ( { model | form = { oldForm | questions = newQuestions } }, Cmd.none )
 
+            MoveQuestionUp questionIndex ->
+                let
+                    updatedQuesions =
+                        moveItemUp questionIndex model.form.questions
+                in
+                    ( { model | form = { oldForm | questions = updatedQuesions } }, Cmd.none )
+
+            MoveQuestionDown questionIndex ->
+                ( model, Cmd.none )
+
+            RemoveQuestion questionIndex ->
+                let
+                    oldQuestions =
+                        model.form.questions
+
+                    maybyQuestionToRemove =
+                        Array.get questionIndex oldQuestions
+
+                    newQuestions =
+                        case maybyQuestionToRemove of
+                            Nothing ->
+                                oldQuestions
+
+                            Just questionToRemove ->
+                                Array.filter (\q -> q.id /= questionToRemove.id) oldQuestions
+                in
+                    ( { model | form = { oldForm | questions = newQuestions } }, Cmd.none )
+
 
 updateQuestionText : Array Question -> QuestionId -> String -> Array Question
 updateQuestionText oldQuestions questionId newQuestionString =
@@ -136,63 +174,20 @@ updateQuestionText oldQuestions questionId newQuestionString =
                 let
                     newQuestion =
                         { question | questionText = newQuestionString }
-
-                    _ =
-                        Debug.log "updateQuestionText" newQuestion
                 in
                     Array.set questionIndex newQuestion oldQuestions
-
-
-type InArrayPosition
-    = First
-    | Middle
-    | Last
 
 
 updateAddQuestion : QuestionType -> ControlIndex -> Array Question -> Array Question
 updateAddQuestion qType index oldQuestions =
     let
-        arrayLength =
-            Array.length oldQuestions
-
         inArrayPosition =
-            if (index == 0) then
-                First
-            else if (arrayLength == index) then
-                Last
-            else
-                Middle
+            getArrayPosition index oldQuestions
 
-        _ =
-            Debug.log "updateAddQuestion" ("arrayLenth: " ++ (toString arrayLength) ++ ", index: " ++ (toString index) ++ " position: " ++ (toString inArrayPosition))
+        questionToInsert =
+            emptyQuestion qType
     in
-        case inArrayPosition of
-            First ->
-                Array.append (Array.fromList [ emptyQuestion qType ]) oldQuestions
-
-            Middle ->
-                let
-                    firstHalf =
-                        Array.slice 0 index oldQuestions
-
-                    secondHalf =
-                        Array.slice index arrayLength oldQuestions
-
-                    newFirstHalf =
-                        Array.append firstHalf (fromList [ emptyQuestion qType ])
-
-                    newArray =
-                        Array.append newFirstHalf secondHalf
-
-                    -- _ =
-                    --     Debug.log "Add q middle, firstHalf" firstHalf
-                    -- _ =
-                    --     Debug.log "Add q middle, secondHalf" secondHalf
-                in
-                    newArray
-
-            Last ->
-                Array.push (emptyQuestion qType) oldQuestions
+        insertItemIntoArray questionToInsert index oldQuestions
 
 
 updateQuestionId : Int -> Array Question -> Array Question
@@ -227,7 +222,7 @@ view model =
             None
             [ spacing 10 ]
             [ formMetadataView model
-            , questionsView model.controlHoverState form.questions
+            , questionsView model
             , FormView.button "Spara" SaveForm []
             ]
 
@@ -265,21 +260,24 @@ formMetadataView model =
             ]
 
 
-questionsView : ControlHover -> Array Question -> Element Styles variation Msg
-questionsView hoverState questions =
+questionsView : Model -> Element Styles variation Msg
+questionsView model =
     let
+        form =
+            model.form
+
         questionViews =
-            Array.map (\q -> (questionTuple hoverState q (getItemIndex questions q 1))) questions
+            Array.map (\q -> (questionTuple model.controlHoverState q (getItemIndex form.questions q) model.device)) form.questions
     in
         column QuestionsView
             []
-            ([ addQuestionView hoverState 0 ]
+            ([ addQuestionView model.controlHoverState 0 model.device ]
                 ++ (Array.toList questionViews)
             )
 
 
-questionTuple : ControlHover -> Question -> Maybe Int -> Element Styles variation Msg
-questionTuple hoverState question maybeIndex =
+questionTuple : ControlHover -> Question -> Maybe Int -> Device -> Element Styles variation Msg
+questionTuple hoverState question maybeIndex device =
     case maybeIndex of
         Nothing ->
             Element.empty
@@ -288,12 +286,12 @@ questionTuple hoverState question maybeIndex =
             column None
                 []
                 [ questionView question index
-                , addQuestionView hoverState index
+                , addQuestionView hoverState (index + 1) device
                 ]
 
 
-addQuestionView : ControlHover -> ControlIndex -> Element Styles variation Msg
-addQuestionView hoverState index =
+addQuestionView : ControlHover -> ControlIndex -> Device -> Element Styles variation Msg
+addQuestionView hoverState index device =
     let
         plus =
             [ addQuestionButton FeatherIcons.plusCircle "Lägg till fråga" (AddQuestion InfoType index) ]
@@ -306,15 +304,20 @@ addQuestionView hoverState index =
             ]
 
         controls =
-            case (hoverState) of
-                NoControl ->
-                    plus
+            case device.phone of
+                True ->
+                    allControls
 
-                Hovering controlIndex ->
-                    if (controlIndex == index) then
-                        allControls
-                    else
-                        plus
+                False ->
+                    case (hoverState) of
+                        NoControl ->
+                            plus
+
+                        Hovering controlIndex ->
+                            if (controlIndex == index) then
+                                allControls
+                            else
+                                plus
     in
         row AddQuestionsView
             [ center, spacingXY 30 0, padding 5, verticalCenter, onMouseEnter (AddQuestionControlHover index), onMouseLeave AddQuestionControlNoHover ]
@@ -419,13 +422,13 @@ choiceQuestion question =
         Enabled
 
 
-questionButtons : Int -> Element Styles variation Msg
-questionButtons questionIndex =
+questionButtons : QuestionIndex -> Element Styles variation Msg
+questionButtons qIndex =
     Element.column None
         [ center, verticalCenter, padding 5, spacing 10 ]
-        [ (iconButton FeatherIcons.arrowUp "Flytta upp" DummyMessage)
-        , (iconButton FeatherIcons.trash2 "Radera" DummyMessage)
-        , (iconButton FeatherIcons.arrowDown "Flytta ned" DummyMessage)
+        [ (iconButton FeatherIcons.arrowUp "Flytta upp" (MoveQuestionUp qIndex))
+        , (iconButton FeatherIcons.trash2 "Radera" (RemoveQuestion qIndex))
+        , (iconButton FeatherIcons.arrowDown "Flytta ned" (MoveQuestionDown qIndex))
         ]
 
 
@@ -436,17 +439,3 @@ iconButton icon titleText msg =
         (Element.html
             (icon |> FeatherIcons.toHtml [])
         )
-
-
-
--- iconButton : FeatherIcons.Icon -> String -> Msg -> Element Styles variation Msg
--- iconButton icon titleText msg =
---     column None
---         [ verticalCenter, height (px 300) ]
---         [ Element.el IconButton
---             [ onClick msg ]
---             (Element.html
---                 (icon |> FeatherIcons.toHtml [])
---             )
---         , Element.text titleText
---         ]

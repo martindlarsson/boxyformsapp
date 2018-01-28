@@ -123,8 +123,8 @@ getItemWitId questions id startIndex =
                             getItemWitId restQuestions id (startIndex + 1)
 
 
-getItemIndex : Array Question -> Question -> Int -> Maybe Int
-getItemIndex questions question startIndex =
+getItemIndex_Internal : Array Question -> Question -> Int -> Maybe Int
+getItemIndex_Internal questions question startIndex =
     let
         maybeQuestion =
             getItemWitId questions question.id startIndex
@@ -135,3 +135,8 @@ getItemIndex questions question startIndex =
 
             Just ( question, questionIndex ) ->
                 Just questionIndex
+
+
+getItemIndex : Array Question -> Question -> Maybe Int
+getItemIndex questions question =
+    getItemIndex_Internal questions question 0

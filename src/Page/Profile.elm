@@ -60,7 +60,7 @@ view user =
     in
         column
             None
-            [ spacing 20 ]
+            []
             [ when (isUserValid == UserNeedsMoreInfo) (Form.infoBox "Jag vill be dig fylla i detta formulär innan du går vidare och skapar dina egna formulär. Om du inte tillhör en organisation kan du fylla i ditt namn under visningsnamn. Jag använder visningsnamn i dina formulär som författaren av formuläret.")
             , Form.textInput Singleline "Namn" "Inget" user.displayName (TextChanged NoField) Disabled
             , Form.textInput Singleline "E-post" "Inget" user.email (TextChanged NoField) Disabled
