@@ -2,7 +2,10 @@ module Page.NewForm exposing (..)
 
 import Element exposing (..)
 import Element.Events exposing (..)
-import Element.Attributes exposing (..)
+import Element.Font as Font
+import Element.Border as Border
+import Element.Background as Background
+import Color
 import BoxyStyle exposing (..)
 import Data.User as User exposing (..)
 import Views.Form as FormView exposing (..)
@@ -212,14 +215,13 @@ updateQuestionId newRandomId questions =
 -- VIEW --
 
 
-view : Model -> Element Styles variation Msg
+view : Model -> Element Msg
 view model =
     let
         form =
             model.form
     in
         column
-            None
             [ spacing 10 ]
             [ formMetadataView model
             , questionsView model
@@ -227,7 +229,7 @@ view model =
             ]
 
 
-formMetadataView : Model -> Element Styles variation Msg
+formMetadataView : Model -> Element Msg
 formMetadataView model =
     let
         userState =
@@ -247,10 +249,10 @@ formMetadataView model =
                 UserNeedsMoreInfo ->
                     FormView.infoBox "Jag vill be dig fylla i detta formulär innan du går vidare och skapar dina egna formulär. Om du inte tillhör en organisation kan du fylla i ditt namn under visningsnamn. Jag använder visningsnamn i dina formulär som författaren av formuläret."
     in
-        column FormMetadataView
+        column
             [ spacing 10 ]
-            [ paragraph H1 [] [ Element.text "Skapa nytt formulär" ]
-            , paragraph None [] [ Element.text "Här skapar du ditt formulär. Först behöver jag veta namnet på formuläret och när det ska vara tillgångt och till vem." ]
+            [ paragraph h1 [ Element.text "Skapa nytt formulär" ]
+            , paragraph [] [ Element.text "Här skapar du ditt formulär. Först behöver jag veta namnet på formuläret och när det ska vara tillgångt och till vem." ]
             , userForm
             , FormView.textInput Singleline "Namn" "Namnet på formuläret" form.name (TextChanged FormName) Enabled
             , FormView.textInput Multiline "Beskrivning" "Beskriv syftet med formuläret" form.description (TextChanged Description) Enabled
@@ -260,7 +262,7 @@ formMetadataView model =
             ]
 
 
-questionsView : Model -> Element Styles variation Msg
+questionsView : Model -> Element Msg
 questionsView model =
     let
         form =
@@ -269,28 +271,27 @@ questionsView model =
         questionViews =
             Array.map (\q -> (questionTuple model.controlHoverState q (getItemIndex form.questions q) model.device)) form.questions
     in
-        column QuestionsView
-            []
+        column BoxyStyle.questionView
             ([ addQuestionView model.controlHoverState 0 model.device ]
                 ++ (Array.toList questionViews)
             )
 
 
-questionTuple : ControlHover -> Question -> Maybe Int -> Device -> Element Styles variation Msg
+questionTuple : ControlHover -> Question -> Maybe Int -> Device -> Element Msg
 questionTuple hoverState question maybeIndex device =
     case maybeIndex of
         Nothing ->
             Element.empty
 
         Just index ->
-            column None
+            column
                 []
                 [ questionView question index
                 , addQuestionView hoverState (index + 1) device
                 ]
 
 
-addQuestionView : ControlHover -> ControlIndex -> Device -> Element Styles variation Msg
+addQuestionView : ControlHover -> ControlIndex -> Device -> Element Msg
 addQuestionView hoverState index device =
     let
         plus =
@@ -319,25 +320,34 @@ addQuestionView hoverState index device =
                             else
                                 plus
     in
-        row AddQuestionsView
-            [ center, spacingXY 30 0, padding 5, verticalCenter, onMouseEnter (AddQuestionControlHover index), onMouseLeave AddQuestionControlNoHover ]
+        Element.row
+            [ Font.size 40
+            , Font.color Color.darkGray
+            , center
+            , spacingXY 30 0
+            , padding 5
+            , centerY
+            , onMouseEnter (AddQuestionControlHover index)
+            , onMouseLeave AddQuestionControlNoHover
+            ]
             controls
 
 
-addQuestionButton : FeatherIcons.Icon -> String -> Msg -> Element Styles variation Msg
+addQuestionButton : FeatherIcons.Icon -> String -> Msg -> Element Msg
 addQuestionButton icon titleText msg =
-    Element.column None
-        [ verticalCenter, center ]
-        [ Element.el AddQuestionButton
-            [ onClick msg, Element.Attributes.toAttr (Html.Attributes.title titleText) ]
+    Element.column
+        [ centerY, center ]
+        [ Element.el
+            [ onClick msg ]
+            --, Element.Attributes.toAttr (Html.Attributes.title titleText)
             (Element.html
                 (icon |> FeatherIcons.toHtml [])
             )
-        , Element.el AddQuestionsSubView [] (Element.text titleText)
+        , Element.el [ Font.size 10, Font.color Color.darkGray ] (Element.text titleText)
         ]
 
 
-questionView : Question -> Int -> Element Styles variation Msg
+questionView : Question -> Int -> Element Msg
 questionView question questionIndex =
     let
         questionType =
@@ -357,28 +367,43 @@ questionView question questionIndex =
                 YesNoType ->
                     yesNoQuestion question
     in
-        Element.grid QuestionView
-            [ spacing 10, padding 10 ]
-            { columns = [ fill, (px 50) ]
-            , rows = [ fill ]
-            , cells =
-                [ Element.cell
-                    { start = ( 0, 0 )
-                    , width = 1
-                    , height = 1
-                    , content = questionContent
-                    }
-                , Element.cell
-                    { start = ( 1, 0 )
-                    , width = 1
-                    , height = 1
-                    , content = questionButtons questionIndex
-                    }
-                ]
-            }
+        Element.row
+            [ Background.color Color.lightOrange
+            , spacing 10
+            , padding 10
+            , Border.shadow
+                { offset = ( 5, 5 )
+                , size = 3
+                , blur = 20
+                , color = Color.darkGray
+                }
+            ]
+            [ Element.column [ width fill ] [ questionContent ]
+            , Element.column [ width (px 50) ] [ questionButtons questionIndex ]
+            ]
 
 
-infoQuestion : Question -> Element Styles variation Msg
+
+-- { columns = [ fill, (px 50) ]
+-- , rows = [ fill ]
+-- , cells =
+--     [ Element.cell
+--         { start = ( 0, 0 )
+--         , width = 1
+--         , height = 1
+--         , content = questionContent
+--         }
+--     , Element.cell
+--         { start = ( 1, 0 )
+--         , width = 1
+--         , height = 1
+--         , content = questionButtons questionIndex
+--         }
+--     ]
+-- }
+
+
+infoQuestion : Question -> Element Msg
 infoQuestion question =
     FormView.textInput
         Multiline
@@ -389,7 +414,7 @@ infoQuestion question =
         Enabled
 
 
-textQuestion : Question -> Element Styles variation Msg
+textQuestion : Question -> Element Msg
 textQuestion question =
     FormView.textInput
         Multiline
@@ -400,7 +425,7 @@ textQuestion question =
         Enabled
 
 
-yesNoQuestion : Question -> Element Styles variation Msg
+yesNoQuestion : Question -> Element Msg
 yesNoQuestion question =
     FormView.textInput
         Multiline
@@ -411,7 +436,7 @@ yesNoQuestion question =
         Enabled
 
 
-choiceQuestion : Question -> Element Styles variation Msg
+choiceQuestion : Question -> Element Msg
 choiceQuestion question =
     FormView.textInput
         Multiline
@@ -422,20 +447,27 @@ choiceQuestion question =
         Enabled
 
 
-questionButtons : QuestionIndex -> Element Styles variation Msg
+questionButtons : QuestionIndex -> Element Msg
 questionButtons qIndex =
-    Element.column None
-        [ center, verticalCenter, padding 5, spacing 10 ]
+    Element.column
+        [ center, centerY, padding 5, spacing 10 ]
         [ (iconButton FeatherIcons.arrowUp "Flytta upp" (MoveQuestionUp qIndex))
         , (iconButton FeatherIcons.trash2 "Radera" (RemoveQuestion qIndex))
         , (iconButton FeatherIcons.arrowDown "Flytta ned" (MoveQuestionDown qIndex))
         ]
 
 
-iconButton : FeatherIcons.Icon -> String -> Msg -> Element Styles variation Msg
+iconButton : FeatherIcons.Icon -> String -> Msg -> Element Msg
 iconButton icon titleText msg =
-    Element.el IconButton
-        [ onClick msg ]
+    Element.el
+        [ Font.color Color.lightCharcoal
+        , onClick msg
+
+        -- , hover
+        --     [ Color.text Color.charcoal
+        --     , cursor "pointer"
+        --     ]
+        ]
         (Element.html
             (icon |> FeatherIcons.toHtml [])
         )

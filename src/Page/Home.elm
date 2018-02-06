@@ -1,7 +1,10 @@
 module Page.Home exposing (view, update, Msg)
 
 import Element exposing (..)
-import Element.Attributes exposing (..)
+
+
+-- import Element.Attributes exposing (..)
+
 import BoxyStyle exposing (..)
 import Views.Form as Form exposing (..)
 import Data.User exposing (..)
@@ -29,7 +32,7 @@ update msg =
 -- VIEW --
 
 
-view : Maybe User -> Element Styles variation Msg
+view : Maybe User -> Element Msg
 view user =
     let
         isUserDataOK =
@@ -46,9 +49,8 @@ view user =
                 NotLoggedIn ->
                     "Logga in och skapa ditt första formulär"
     in
-        column None
-            []
-            [ paragraph H1 [] [ text "Hej och välkommen till BoxyForms!" ]
-            , paragraph None [ paddingTop 20, paddingBottom 40 ] [ text "Här kan du skapa formulär för t.ex. anmälan till ditt sportarrangemang eller ert bröllop. Börja med att skapa ett formulär genom att klicka på knappen nedan." ]
+        column [ spacing 20, padding 10 ]
+            [ paragraph h1 [ text "Hej och välkommen till BoxyForms!" ]
+            , paragraph [] [ text "Här kan du skapa formulär för t.ex. anmälan till ditt sportarrangemang eller ert bröllop. Börja med att skapa ett formulär genom att klicka på knappen nedan." ]
             , Form.button buttonText NewFormMsg []
             ]

@@ -5,11 +5,14 @@ import Task exposing (..)
 import Route exposing (Route, routeToString)
 import Navigation exposing (Location)
 import Json.Decode as Decode exposing (Value)
-import BoxyStyle exposing (..)
 import Ports exposing (..)
 import Element as El exposing (..)
 import Element.Keyed as Keyed exposing (..)
-import Element.Attributes as Attr exposing (..)
+import Element.Border as Border
+import Element.Background as Background
+import Color
+import Element.Font as Font
+import Util exposing (..)
 import Html exposing (..)
 import Data.User as User exposing (..)
 import Page.Login as LoginPage exposing (view)
@@ -57,61 +60,63 @@ view model =
 
         pageLayout =
             if (device.phone) then
-                [ Attr.width fill ]
+                [ El.width fill ]
             else if (device.tablet) then
-                [ Attr.width (px 600), center ]
+                [ El.width (px 600), center ]
             else
-                [ Attr.width (px 800), center ]
+                [ El.width (px 800), center ]
     in
-        El.viewport (boxyStylesheet model.device) <|
-            El.grid Main
-                [ spacing 20 ]
-                { columns = [ fill ]
-                , rows = [ px 80, px (toFloat (device.height - 80)) ]
-                , cells =
-                    [ El.cell
-                        { start = ( 0, 0 )
-                        , width = 1
-                        , height = 1
-                        , content = navigation model
-                        }
-                    , El.cell
-                        { start = ( 0, 1 )
-                        , width = 1
-                        , height = 1
-                        , content =
-                            el Page
-                                [ spacing 20, padding 20, paddingBottom 50 ]
-                                (el
-                                    None
-                                    pageLayout
-                                    (viewPage page model)
-                                )
+        El.layout
+            [ Font.family [ Font.sansSerif ]
+            , Font.size 14
+            , Font.color Color.charcoal
+            , Background.color Color.lightGray
+            ]
+        <|
+            El.column
+                []
+                [ El.row
+                    [ El.height (px 80)
+                    , Background.color Color.lightOrange
+                    , Border.shadow
+                        { offset = ( 3, 0 )
+                        , blur = 2
+                        , size = 3
+                        , color = Color.darkGray
                         }
                     ]
-                }
+                    [ navigation model ]
+                , El.row
+                    [ El.height <| px (device.height - 80)
+                    , padding 20
+                    ]
+                    [ (viewPage page model) ]
+                ]
 
 
-
--- TODO gör responsiv och dölj saker på mindre skärmar
-
-
-navigation : Model -> Element Styles variation msg
+navigation : Model -> Element msg
 navigation model =
     let
         activePage =
             model.activePage
     in
-        El.row Navigation
-            [ spread, paddingXY 80 20, verticalCenter ]
-            [ link (routeToString Route.Home) <| el Logo [] (El.text "BoxyForms")
-            , El.row None
-                [ spacing 20, center, verticalCenter ]
+        El.row
+            [ centerY
+            , center
+            , padding 20
+            ]
+            [ link []
+                { url = (routeToString Route.Home)
+                , label = (El.el [ Font.size 25 ] (El.text "BoxyForms"))
+                }
+            , El.row [ El.width fill ] [ El.empty ]
+            , El.row
+                [ spacing 20, alignRight ]
                 (signInLink model)
             ]
 
 
-signInLink : Model -> List (Element Styles variation msg)
+signInLink : Model -> List (Element msg)
 signInLink model =
     let
         user =
@@ -121,16 +126,16 @@ signInLink model =
             model.activeRoute
     in
         if (user == Nothing) then
-            [ link (routeToString Route.Login) <| el (navStyle activeRoute Route.Login) [] (El.text "Logga in") ]
+            [ link [] { url = (routeToString Route.Login), label = (El.el (navStyle activeRoute Route.Login) (El.text "Logga in")) } ]
         else
-            [ link (routeToString Route.NewForm) <| el (navStyle activeRoute Route.NewForm) [] (El.text "Nytt formulär")
-            , link (routeToString Route.MyForms) <| el (navStyle activeRoute Route.MyForms) [] (El.text "Mina formulär")
-            , link (routeToString Route.Profile) <| el (navStyle activeRoute Route.Profile) [] (El.text "Min profil")
-            , link (routeToString Route.Logout) <| el NavOption [] (El.text "Logga ut")
+            [ link [] { url = (routeToString Route.NewForm), label = (El.el (navStyle activeRoute Route.NewForm) (El.text "Nytt formulär")) }
+            , link [] { url = (routeToString Route.MyForms), label = (El.el (navStyle activeRoute Route.MyForms) (El.text "Mina formulär")) }
+            , link [] { url = (routeToString Route.Profile), label = (El.el (navStyle activeRoute Route.Profile) (El.text "Min profil")) }
+            , link [] { url = (routeToString Route.Logout), label = (El.el [ Font.size 16 ] (El.text "Logga ut")) }
             ]
 
 
-viewPage : Page -> Model -> Element Styles variation Msg
+viewPage : Page -> Model -> Element Msg
 viewPage page model =
     case page of
         NotFound ->
@@ -143,10 +148,10 @@ viewPage page model =
             El.text "Mina formulär"
 
         NewForm pageModel ->
-            Keyed.row None [] [ ( "new_form", (El.map NewFormPageMsg (NewFormPage.view pageModel)) ) ]
+            Keyed.row [] [ ( "new_form", (El.map NewFormPageMsg (NewFormPage.view pageModel)) ) ]
 
         Profile user ->
-            Keyed.row None [] [ ( "profile_page", (El.map ProfilePageMsg (ProfilePage.view user)) ) ]
+            Keyed.row [] [ ( "profile_page", (El.map ProfilePageMsg (ProfilePage.view user)) ) ]
 
         Login ->
             LoginPage.view
@@ -176,8 +181,6 @@ update msg model =
         isUserDataOK =
             validateUser model.user
 
-        -- _ =
-        --     Debug.log "setRoute validateUser" isUserDataOK
         page =
             model.activePage
     in
@@ -189,7 +192,6 @@ update msg model =
                 ( { model | device = Just (classifyDevice wSize) }, Cmd.none )
 
             ( SetRoute route, _ ) ->
-                -- setRoute route model
                 case isUserDataOK of
                     UserIsOK ->
                         setRoute route model
@@ -342,12 +344,15 @@ main =
 -- HELPERS --
 
 
-navStyle : Route -> Route -> Styles
+navStyle : Route -> Route -> List (El.Attribute msg)
 navStyle activeRoute navRoute =
     if (activeRoute == navRoute) then
-        ActiveNavOption
+        [ Font.size 16
+        , Font.underline
+        , Font.bold
+        ]
     else
-        NavOption
+        [ Font.size 16 ]
 
 
 getDevice : Maybe Device -> Device

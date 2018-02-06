@@ -1,7 +1,10 @@
 module Page.Profile exposing (view, update, Msg)
 
 import Element exposing (..)
-import Element.Attributes exposing (..)
+
+
+-- import Element.Attributes exposing (..)
+
 import BoxyStyle exposing (..)
 import Data.User as User exposing (..)
 import Ports exposing (saveUser)
@@ -44,7 +47,7 @@ update msg user =
 -- VIEW --
 
 
-view : User -> Element Styles variation Msg
+view : User -> Element Msg
 view user =
     let
         orgName =
@@ -59,9 +62,11 @@ view user =
             validateUser (Just user)
     in
         column
-            None
-            []
-            [ when (isUserValid == UserNeedsMoreInfo) (Form.infoBox "Jag vill be dig fylla i detta formulär innan du går vidare och skapar dina egna formulär. Om du inte tillhör en organisation kan du fylla i ditt namn under visningsnamn. Jag använder visningsnamn i dina formulär som författaren av formuläret.")
+            [ alignTop ]
+            [ if (isUserValid == UserNeedsMoreInfo) then
+                (Form.infoBox "Jag vill be dig fylla i detta formulär innan du går vidare och skapar dina egna formulär. Om du inte tillhör en organisation kan du fylla i ditt namn under visningsnamn. Jag använder visningsnamn i dina formulär som författaren av formuläret.")
+              else
+                Element.empty
             , Form.textInput Singleline "Namn" "Inget" user.displayName (TextChanged NoField) Disabled
             , Form.textInput Singleline "E-post" "Inget" user.email (TextChanged NoField) Disabled
             , Form.textInput Singleline "Visningsnamn" "Namnet på din organisation eller ditt namn" orgName (TextChanged OrgName) Enabled
