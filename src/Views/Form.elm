@@ -36,9 +36,15 @@ textInput inputType fieldLabel placeholder textValue msg ability =
 
         fieldStyle =
             if (ability == Disabled) then
-                [ Border.width 1, Border.solid, Border.color Color.lightCharcoal, Background.color Color.grey ]
+                [ Border.width 1, Border.solid, Border.color Color.lightCharcoal, spacing 5, Background.color Color.grey ]
             else
-                [ Border.width 1, Border.solid, Border.color Color.lightCharcoal ]
+                [ Border.width 1, Border.solid, Border.color Color.lightCharcoal, spacing 5 ]
+
+        boxHeight =
+            if (inputType == Singleline) then
+                [ height (px 40) ]
+            else
+                [ height (px 80) ]
 
         input =
             if (inputType == Multiline) then
@@ -46,50 +52,13 @@ textInput inputType fieldLabel placeholder textValue msg ability =
             else
                 Input.text
     in
-        input fieldStyle
+        input (List.append fieldStyle boxHeight)
             { onChange = onChangeMsg
             , text = textValue
             , placeholder = Just <| Input.placeholder [] (El.text placeholder)
             , label = Input.labelAbove [] (El.text fieldLabel)
             , notice = Nothing
             }
-
-
-
--- textInput : TextInputType -> String -> String -> String -> (String -> msg) -> Ability -> Element msg
--- textInput inputType fieldLabel placeholder textValue msg ability =
---     let
---         abilityOption =
---             if (ability == Disabled) then
---                 [ disabled ]
---             else
---                 []
---         fieldStyle =
---             if (ability == Disabled) then
---                 [ Border.width 1, Border.solid, Border.color Color.lightCharcoal, Background.color Color.grey ]
---             else
---                 [ Border.width 1, Border.solid, Border.color Color.lightCharcoal ]
---         input =
---             if (inputType == Multiline) then
---                 Input.multiline
---             else
---                 Input.text
---     in
---         input fieldStyle
---             [ padding 10 ]
---             { onChange = msg
---             , value = textValue
---             , label =
---                 Input.placeholder
---                     { label = Input.labelAbove (el [] [ centerY ] (El.text fieldLabel))
---                     , text = placeholder
---                     }
---             , options =
---                 List.append
---                     abilityOption
---                     [--Input.errorBelow (el Error [ spacing 5 ] (Element.text "Detta fält måste fyllas i"))
---                     ]
---             }
 
 
 button : String -> msg -> List (Attribute msg) -> Element msg

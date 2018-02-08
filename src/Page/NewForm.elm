@@ -222,10 +222,10 @@ view model =
             model.form
     in
         column
-            [ spacing 10 ]
+            [ spacing 20 ]
             [ formMetadataView model
             , questionsView model
-            , FormView.button "Spara" SaveForm []
+            , FormView.button "Spara" SaveForm [ height (px 40) ]
             ]
 
 
@@ -271,7 +271,7 @@ questionsView model =
         questionViews =
             Array.map (\q -> (questionTuple model.controlHoverState q (getItemIndex form.questions q) model.device)) form.questions
     in
-        column BoxyStyle.questionView
+        column []
             ([ addQuestionView model.controlHoverState 0 model.device ]
                 ++ (Array.toList questionViews)
             )
@@ -323,10 +323,12 @@ addQuestionView hoverState index device =
         Element.row
             [ Font.size 40
             , Font.color Color.darkGray
+            , Background.color Color.lightGray
             , center
-            , spacingXY 30 0
-            , padding 5
+            , spacingXY 5 10
+            , padding 10
             , centerY
+            , width (px 250)
             , onMouseEnter (AddQuestionControlHover index)
             , onMouseLeave AddQuestionControlNoHover
             ]
@@ -336,9 +338,9 @@ addQuestionView hoverState index device =
 addQuestionButton : FeatherIcons.Icon -> String -> Msg -> Element Msg
 addQuestionButton icon titleText msg =
     Element.column
-        [ centerY, center ]
+        [ centerY, center, pointer, Font.mouseOverColor Color.lightCharcoal, onClick msg ]
         [ Element.el
-            [ onClick msg ]
+            []
             --, Element.Attributes.toAttr (Html.Attributes.title titleText)
             (Element.html
                 (icon |> FeatherIcons.toHtml [])
@@ -371,36 +373,17 @@ questionView question questionIndex =
             [ Background.color Color.lightOrange
             , spacing 10
             , padding 10
-            , Border.shadow
-                { offset = ( 5, 5 )
-                , size = 3
-                , blur = 20
-                , color = Color.darkGray
-                }
+
+            -- , Border.shadow
+            --     { offset = ( 5, 5 )
+            --     , size = 3
+            --     , blur = 20
+            --     , color = Color.darkGray
+            --     }
             ]
             [ Element.column [ width fill ] [ questionContent ]
-            , Element.column [ width (px 50) ] [ questionButtons questionIndex ]
+            , Element.column [ width (px 30) ] [ questionButtons questionIndex ]
             ]
-
-
-
--- { columns = [ fill, (px 50) ]
--- , rows = [ fill ]
--- , cells =
---     [ Element.cell
---         { start = ( 0, 0 )
---         , width = 1
---         , height = 1
---         , content = questionContent
---         }
---     , Element.cell
---         { start = ( 1, 0 )
---         , width = 1
---         , height = 1
---         , content = questionButtons questionIndex
---         }
---     ]
--- }
 
 
 infoQuestion : Question -> Element Msg
@@ -438,13 +421,16 @@ yesNoQuestion question =
 
 choiceQuestion : Question -> Element Msg
 choiceQuestion question =
-    FormView.textInput
-        Multiline
-        "Flervalsfråga"
-        "Frågetext"
-        question.questionText
-        (UpdateQuestionText question.id)
-        Enabled
+    Element.column []
+        [ FormView.textInput
+            Singleline
+            "Flervalsfråga"
+            "Frågetext"
+            question.questionText
+            (UpdateQuestionText question.id)
+            Enabled
+        , Element.text "hej"
+        ]
 
 
 questionButtons : QuestionIndex -> Element Msg
@@ -461,12 +447,9 @@ iconButton : FeatherIcons.Icon -> String -> Msg -> Element Msg
 iconButton icon titleText msg =
     Element.el
         [ Font.color Color.lightCharcoal
+        , Font.mouseOverColor Color.charcoal
         , onClick msg
-
-        -- , hover
-        --     [ Color.text Color.charcoal
-        --     , cursor "pointer"
-        --     ]
+        , pointer
         ]
         (Element.html
             (icon |> FeatherIcons.toHtml [])

@@ -62,7 +62,7 @@ view user =
             validateUser (Just user)
     in
         column
-            [ alignTop ]
+            [ alignTop, spacing 20 ]
             [ if (isUserValid == UserNeedsMoreInfo) then
                 (Form.infoBox "Jag vill be dig fylla i detta formulär innan du går vidare och skapar dina egna formulär. Om du inte tillhör en organisation kan du fylla i ditt namn under visningsnamn. Jag använder visningsnamn i dina formulär som författaren av formuläret.")
               else

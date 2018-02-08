@@ -8,7 +8,6 @@ import Json.Decode as Decode exposing (Value)
 import Ports exposing (..)
 import Element as El exposing (..)
 import Element.Keyed as Keyed exposing (..)
-import Element.Border as Border
 import Element.Background as Background
 import Color
 import Element.Font as Font
@@ -60,11 +59,11 @@ view model =
 
         pageLayout =
             if (device.phone) then
-                [ El.width fill ]
+                [ El.width fill, paddingXY 0 20 ]
             else if (device.tablet) then
-                [ El.width (px 600), center ]
+                [ El.width (px 600), center, paddingXY 0 20 ]
             else
-                [ El.width (px 800), center ]
+                [ El.width (px 800), center, paddingXY 0 20 ]
     in
         El.layout
             [ Font.family [ Font.sansSerif ]
@@ -78,18 +77,18 @@ view model =
                 [ El.row
                     [ El.height (px 80)
                     , Background.color Color.lightOrange
-                    , Border.shadow
-                        { offset = ( 3, 0 )
-                        , blur = 2
-                        , size = 3
-                        , color = Color.darkGray
-                        }
+
+                    -- , Border.shadow
+                    --     { offset = ( 3, 0 )
+                    --     , blur = 2
+                    --     , size = 3
+                    --     , color = Color.darkGray
+                    --     }
                     ]
                     [ navigation model ]
                 , El.row
-                    [ El.height <| px (device.height - 80)
-                    , padding 20
-                    ]
+                    --El.height <| px (device.height - 80)
+                    pageLayout
                     [ (viewPage page model) ]
                 ]
 
