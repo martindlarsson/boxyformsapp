@@ -25,7 +25,7 @@ infoBox infoString =
         [ paragraph [ Background.color Color.white, padding 10 ] [ El.text infoString ] ]
 
 
-textInput : TextInputType -> String -> String -> String -> (String -> msg) -> Ability -> Element msg
+textInput : TextInputType -> Maybe String -> String -> String -> (String -> msg) -> Ability -> Element msg
 textInput inputType fieldLabel placeholder textValue msg ability =
     let
         onChangeMsg =
@@ -36,9 +36,9 @@ textInput inputType fieldLabel placeholder textValue msg ability =
 
         fieldStyle =
             if (ability == Disabled) then
-                [ Border.width 1, Border.solid, Border.color Color.lightCharcoal, spacing 5, Background.color Color.grey ]
+                [ Border.width 1, Border.solid, Border.color Color.lightCharcoal, spacing 5, Background.color Color.grey, centerY ]
             else
-                [ Border.width 1, Border.solid, Border.color Color.lightCharcoal, spacing 5 ]
+                [ Border.width 1, Border.solid, Border.color Color.lightCharcoal, spacing 5, centerY ]
 
         boxHeight =
             if (inputType == Singleline) then
@@ -51,12 +51,20 @@ textInput inputType fieldLabel placeholder textValue msg ability =
                 Input.multiline
             else
                 Input.text
+
+        theLabel =
+            case fieldLabel of
+                Just fLabel ->
+                    Input.labelAbove [] (El.text fLabel)
+
+                Nothing ->
+                    Input.labelAbove [] (El.empty)
     in
         input (List.append fieldStyle boxHeight)
             { onChange = onChangeMsg
             , text = textValue
             , placeholder = Just <| Input.placeholder [] (El.text placeholder)
-            , label = Input.labelAbove [] (El.text fieldLabel)
+            , label = theLabel
             , notice = Nothing
             }
 

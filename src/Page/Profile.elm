@@ -67,8 +67,8 @@ view user =
                 (Form.infoBox "Jag vill be dig fylla i detta formulär innan du går vidare och skapar dina egna formulär. Om du inte tillhör en organisation kan du fylla i ditt namn under visningsnamn. Jag använder visningsnamn i dina formulär som författaren av formuläret.")
               else
                 Element.empty
-            , Form.textInput Singleline "Namn" "Inget" user.displayName (TextChanged NoField) Disabled
-            , Form.textInput Singleline "E-post" "Inget" user.email (TextChanged NoField) Disabled
-            , Form.textInput Singleline "Visningsnamn" "Namnet på din organisation eller ditt namn" orgName (TextChanged OrgName) Enabled
-            , Form.button "Spara" SaveUser []
+            , Form.textInput Singleline (Just "Namn") "Inget" user.displayName (TextChanged NoField) Disabled
+            , Form.textInput Singleline (Just "E-post") "Inget" user.email (TextChanged NoField) Disabled
+            , Form.textInput Singleline (Just "Visningsnamn") "Namnet på din organisation eller ditt namn" orgName (TextChanged OrgName) Enabled
+            , Form.button "Spara" SaveUser [ height (px 40) ]
             ]
