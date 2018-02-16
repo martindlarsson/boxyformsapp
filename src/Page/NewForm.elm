@@ -10,7 +10,7 @@ import Color
 import BoxyStyle exposing (..)
 import Data.User as User exposing (..)
 import Views.Form as FormView exposing (..)
-import Data.Form exposing (..)
+import Data.Form as Form exposing (..)
 import FeatherIcons
 import Array exposing (..)
 import Random exposing (..)
@@ -26,8 +26,6 @@ type Msg
     | UpdateFormMeta Field
       -- | CheckboxChanged Field Bool
     | UpdateQuestion QuestionOperation
-    | AddQuestionControlHover ControlIndex
-    | AddQuestionControlNoHover
 
 
 
@@ -51,6 +49,8 @@ type QuestionOperation
     | MoveQuestionDown QuestionId
     | RemoveQuestion QuestionId
     | UpdateChoice QuestionId ChoiceOperation
+    | AddQuestionControlHover ControlIndex
+    | AddQuestionControlNoHover
 
 
 type ChoiceOperation
@@ -118,18 +118,14 @@ update msg model =
             UpdateFormMeta field ->
                 ( { model | form = updateFormMetadata oldForm field }, Cmd.none )
 
-            AddQuestionControlHover controlIndex ->
-                ( { model | controlHoverState = Hovering controlIndex }, Cmd.none )
-
-            AddQuestionControlNoHover ->
-                ( { model | controlHoverState = NoControl }, Cmd.none )
-
             UpdateQuestion questionOperation ->
                 let
-                    ( newForm, command ) =
-                        updateQuestion oldForm questionOperation
+                    ( newForm, newControlHoverState, command ) =
+                        updateQuestion oldForm questionOperation model.controlHoverState
+                    
+                    _ = Debug.log "Update" (toString newForm.questions)
                 in
-                    ( { model | form = newForm }, command )
+                    ( { model | form = newForm, controlHoverState = newControlHoverState }, command )
 
 
 updateFormMetadata : Form -> Field -> Form
@@ -154,21 +150,21 @@ updateFormMetadata oldForm field =
             { oldForm | public = value }
 
 
-updateQuestion : Form -> QuestionOperation -> ( Form, Cmd Msg )
-updateQuestion oldForm qOperation =
+updateQuestion : Form -> QuestionOperation -> ControlHover -> ( Form, ControlHover, Cmd Msg )
+updateQuestion oldForm qOperation oldControlHoverState =
     let
         errorReturn =
-            ( oldForm, Cmd.none )
+            ( oldForm, oldControlHoverState, Cmd.none )
     in
         case qOperation of
             AddQuestion qType index ->
                 ( addQuestion oldForm qType index
+                , oldControlHoverState
                 , Random.generate (UpdateQuestion << UpdateQuestionId) (Random.int Random.minInt Random.maxInt)
                 )
 
-            -- ( { model | form = { oldForm | questions = (updateAddQuestion qType index model.form.questions) } }, Random.generate NewRandomQuestionId (Random.int Random.minInt Random.maxInt) )
             UpdateQuestionId newId ->
-                ( updateQuestionId oldForm "new" newId, Cmd.none )
+                ( updateQuestionId oldForm "new" newId, oldControlHoverState, Cmd.none )
 
             UpdateQuestionText questionId newText ->
                 let
@@ -184,9 +180,8 @@ updateQuestion oldForm qOperation =
                                 newQuestion =
                                     { oldQuestion | questionText = newText }
                             in
-                                ( updateFormWithQuestion oldForm questionId newQuestion, Cmd.none )
+                                ( updateFormWithQuestion oldForm questionId newQuestion, oldControlHoverState, Cmd.none )
 
-            -- ( { form | questions = updateFormWithQuestion oldForm questionId questionText }, Cmd.none )
             MoveQuestionUp questionId ->
                 let
                     maybeQuestionIndex =
@@ -194,14 +189,14 @@ updateQuestion oldForm qOperation =
                 in
                     case maybeQuestionIndex of
                         Nothing ->
-                            ( oldForm, Cmd.none )
+                            errorReturn
 
                         Just questionIndex ->
                             let
                                 updatedQuesions =
                                     moveItemUp questionIndex oldForm.questions
                             in
-                                ( { oldForm | questions = updatedQuesions }, Cmd.none )
+                                ( { oldForm | questions = updatedQuesions }, oldControlHoverState, Cmd.none )
 
             MoveQuestionDown questionId ->
                 -- TODO
@@ -221,7 +216,7 @@ updateQuestion oldForm qOperation =
             --             in
             --                 ( { oldForm | questions = updatedQuesions }, Cmd.none )
             RemoveQuestion questionId ->
-                ( removeQuestion oldForm questionId, Cmd.none )
+                ( removeQuestion oldForm questionId, oldControlHoverState, Cmd.none )
 
             UpdateChoice questionId choiceOperation ->
                 let
@@ -237,37 +232,61 @@ updateQuestion oldForm qOperation =
                                 ChoiceType choiceList ->
                                     let
                                         ( newChoices, command ) =
-                                            updateChoice choiceList choiceOperation
+                                            updateChoice questionId choiceList choiceOperation
 
                                         newQuestion =
                                             { oldQuestion | questionType = ChoiceType newChoices }
+
+                                        -- _ = Debug.log "UpdateChoice" (toString newQuestion.questionType)
                                     in
-                                        ( updateFormWithQuestion oldForm oldQuestion.id newQuestion, command )
+                                        ( updateFormWithQuestion oldForm oldQuestion.id newQuestion, oldControlHoverState, command )
 
                                 _ ->
                                     errorReturn
 
+            AddQuestionControlHover controlIndex ->
+                ( oldForm, Hovering controlIndex, Cmd.none )
 
-updateChoice : List Choice -> ChoiceOperation -> ( List Choice, Cmd msg )
-updateChoice oldChoices choiceOp =
+            AddQuestionControlNoHover ->
+                ( oldForm, NoControl, Cmd.none )
+
+
+updateChoice : QuestionId -> List Choice -> ChoiceOperation -> ( List Choice, Cmd Msg )
+updateChoice questionId oldChoices choiceOp =
+    -- let
+        -- _ = Debug.log "updateChoice" ("q: " ++ (toString questionId) ++ ", choiceOp: " ++ (toString choiceOp))
+    -- in
+    
     case choiceOp of
         AddChoice ->
-            ( List.append oldChoices [ emptyChoice ], Cmd.none )
+        let
+            newIdCommandMsg = (\newId -> UpdateQuestion (UpdateChoice questionId (UpdateChoiceId "new" newId)))
+        in
+            ( List.append oldChoices [ emptyChoice ], Random.generate newIdCommandMsg (Random.int Random.minInt Random.maxInt) )
 
         UpdateChoiceId choiceId newId ->
+            let
+                newChoices = Form.updateChoice oldChoices choiceId ChoiceId (toString newId)
+            in
+                ( newChoices, Cmd.none )
+
+        UpdateChoiceText choiceId newText ->
+            let
+                newChoices = Form.updateChoice oldChoices choiceId ChoiceText newText
+            in
+            ( newChoices, Cmd.none )
+
+        MoveChoiceUp choiceId ->
             ( oldChoices, Cmd.none )
 
-        UpdateChoiceText choiceOd newText ->
+        MoveChoiceDown choiceId ->
             ( oldChoices, Cmd.none )
 
-        MoveChoiceUp choiceIndex ->
-            ( oldChoices, Cmd.none )
-
-        MoveChoiceDown choiceIndex ->
-            ( oldChoices, Cmd.none )
-
-        RemoveChoice choiceIndex ->
-            ( oldChoices, Cmd.none )
+        RemoveChoice choiceId ->
+        let
+            newChoices = removeChoice oldChoices choiceId
+        in
+            ( newChoices, Cmd.none )
 
 
 updateQuestionText : Form -> QuestionId -> String -> Form
@@ -345,13 +364,14 @@ questionsView model =
         questionViews =
             Array.map (\q -> (questionTuple model.controlHoverState q (getQuestionIndex model.form q.id) model.device)) model.form.questions
     in
-        Element.column []
-            ([ addQuestionView model.controlHoverState 0 model.device ]
-                ++ (Array.toList questionViews)
-            )
+        Element.map UpdateQuestion <|
+            Element.column []
+                ([ addQuestionView model.controlHoverState 0 model.device ]
+                    ++ (Array.toList questionViews)
+                )
 
 
-questionTuple : ControlHover -> Question -> Maybe QuestionIndex -> Device -> Element Msg
+questionTuple : ControlHover -> Question -> Maybe QuestionIndex -> Device -> Element QuestionOperation
 questionTuple hoverState question maybeIndex device =
     case maybeIndex of
         Nothing ->
@@ -365,17 +385,17 @@ questionTuple hoverState question maybeIndex device =
                 ]
 
 
-addQuestionView : ControlHover -> ControlIndex -> Device -> Element Msg
+addQuestionView : ControlHover -> ControlIndex -> Device -> Element QuestionOperation
 addQuestionView hoverState index device =
     let
         plus =
-            [ addQuestionButton FeatherIcons.plusCircle "Lägg till fråga" (UpdateQuestion (AddQuestion InfoType index)) ]
+            [ addQuestionButton FeatherIcons.plusCircle "Lägg till fråga" (AddQuestion InfoType index) ]
 
         allControls =
-            [ addQuestionButton FeatherIcons.alignJustify "Text" (UpdateQuestion (AddQuestion TextType index))
-            , addQuestionButton FeatherIcons.chevronDown "Val" (UpdateQuestion (AddQuestion (ChoiceType []) index))
-            , addQuestionButton FeatherIcons.checkCircle "Ja/Nej" (UpdateQuestion (AddQuestion YesNoType index))
-            , addQuestionButton FeatherIcons.info "Info" (UpdateQuestion (AddQuestion InfoType index))
+            [ addQuestionButton FeatherIcons.alignJustify "Text" (AddQuestion TextType index)
+            , addQuestionButton FeatherIcons.chevronDown "Val" (AddQuestion (ChoiceType []) index)
+            , addQuestionButton FeatherIcons.checkCircle "Ja/Nej" (AddQuestion YesNoType index)
+            , addQuestionButton FeatherIcons.info "Info" (AddQuestion InfoType index)
             ]
 
         controls =
@@ -409,7 +429,7 @@ addQuestionView hoverState index device =
             controls
 
 
-addQuestionButton : FeatherIcons.Icon -> String -> Msg -> Element Msg
+addQuestionButton : FeatherIcons.Icon -> String -> QuestionOperation -> Element QuestionOperation
 addQuestionButton icon titleText msg =
     Element.column
         [ centerY, center, pointer, Font.color Color.darkGray, Font.mouseOverColor Color.lightCharcoal, onClick msg, width (px 60), padding 10 ]
@@ -423,7 +443,7 @@ addQuestionButton icon titleText msg =
         ]
 
 
-questionView : Question -> Int -> Element Msg
+questionView : Question -> Int -> Element QuestionOperation
 questionView question questionIndex =
     let
         questionType =
@@ -460,40 +480,40 @@ questionView question questionIndex =
             ]
 
 
-infoQuestion : Question -> Element Msg
+infoQuestion : Question -> Element QuestionOperation
 infoQuestion question =
     FormView.textInput
         Multiline
         (Just "Informationstext")
         "Här kan du skriva en informativ text som hjälper användaren."
         question.questionText
-        (UpdateQuestion << UpdateQuestionText question.id)
+        (UpdateQuestionText question.id)
         Enabled
 
 
-textQuestion : Question -> Element Msg
+textQuestion : Question -> Element QuestionOperation
 textQuestion question =
     FormView.textInput
         Multiline
         (Just "Textfråga")
         "Frågetext"
         question.questionText
-        (UpdateQuestion << UpdateQuestionText question.id)
+        (UpdateQuestionText question.id)
         Enabled
 
 
-yesNoQuestion : Question -> Element Msg
+yesNoQuestion : Question -> Element QuestionOperation
 yesNoQuestion question =
     FormView.textInput
         Multiline
         (Just "Ja/Nej-fråga")
         "Frågetext"
         question.questionText
-        (UpdateQuestion << UpdateQuestionText question.id)
+        (UpdateQuestionText question.id)
         Enabled
 
 
-choiceQuestion : Question -> Element Msg
+choiceQuestion : Question -> Element QuestionOperation
 choiceQuestion question =
     let
         qType =
@@ -516,7 +536,7 @@ choiceQuestion question =
                 (Just "Flervalsfråga")
                 "Frågetext"
                 question.questionText
-                (UpdateQuestion << UpdateQuestionText question.id)
+                (UpdateQuestionText question.id)
                 Enabled
             , Element.row [ Font.alignLeft ] [ Element.text "Val" ]
             , Keyed.row
@@ -532,7 +552,7 @@ choiceQuestion question =
                   , (Element.column []
                         (List.append
                             (List.map (\c -> choiceView c question.id) choiceList)
-                            [ addQuestionButton FeatherIcons.plusCircle "Lägg till val" (UpdateQuestion (UpdateChoice question.id AddChoice)) ]
+                            [ addQuestionButton FeatherIcons.plusCircle "Lägg till val" (UpdateChoice question.id AddChoice) ]
                         )
                     )
                   )
@@ -540,7 +560,7 @@ choiceQuestion question =
             ]
 
 
-choiceView : Choice -> QuestionId -> Element Msg
+choiceView : Choice -> QuestionId -> Element QuestionOperation
 choiceView choice questionId =
     Element.row
         [ Background.color Color.lightGrey
@@ -552,29 +572,29 @@ choiceView choice questionId =
         , padding 5
         ]
         [ Element.column [ width fill, centerY ]
-            [ FormView.textInput Singleline Nothing "inget..." choice.choiceText (\text -> (UpdateQuestion (UpdateChoice questionId (UpdateChoiceText choice.id text)))) Enabled ]
+            [ FormView.textInput Singleline Nothing choice.choiceText choice.choiceText (\text -> (UpdateChoice questionId (UpdateChoiceText choice.id text))) Enabled ]
         , Element.column [ width (px 100), centerY ]
             [ Element.row
                 [ center, centerY, padding 5, spacing 5, Font.size 5 ]
-                [ (iconButton FeatherIcons.arrowUp "Flytta upp" (UpdateQuestion (UpdateChoice questionId (MoveChoiceUp choice.id))))
-                , (iconButton FeatherIcons.trash2 "Radera" (UpdateQuestion (UpdateChoice questionId (RemoveChoice choice.id))))
-                , (iconButton FeatherIcons.arrowDown "Flytta ned" (UpdateQuestion (UpdateChoice questionId (MoveChoiceDown choice.id))))
+                [ (iconButton FeatherIcons.arrowUp "Flytta upp" (UpdateChoice questionId (MoveChoiceUp choice.id)))
+                , (iconButton FeatherIcons.trash2 "Radera" (UpdateChoice questionId (RemoveChoice choice.id)))
+                , (iconButton FeatherIcons.arrowDown "Flytta ned" (UpdateChoice questionId (MoveChoiceDown choice.id)))
                 ]
             ]
         ]
 
 
-questionButtons : QuestionId -> Element Msg
+questionButtons : QuestionId -> Element QuestionOperation
 questionButtons questionId =
     Element.column
         [ center, centerY, padding 5, spacing 10 ]
-        [ (iconButton FeatherIcons.arrowUp "Flytta upp" (UpdateQuestion (MoveQuestionUp questionId)))
-        , (iconButton FeatherIcons.trash2 "Radera" (UpdateQuestion (RemoveQuestion questionId)))
-        , (iconButton FeatherIcons.arrowDown "Flytta ned" (UpdateQuestion (MoveQuestionDown questionId)))
+        [ (iconButton FeatherIcons.arrowUp "Flytta upp" (MoveQuestionUp questionId))
+        , (iconButton FeatherIcons.trash2 "Radera" (RemoveQuestion questionId))
+        , (iconButton FeatherIcons.arrowDown "Flytta ned" (MoveQuestionDown questionId))
         ]
 
 
-iconButton : FeatherIcons.Icon -> String -> Msg -> Element Msg
+iconButton : FeatherIcons.Icon -> String -> QuestionOperation -> Element QuestionOperation
 iconButton icon titleText msg =
     Element.el
         [ Font.color Color.lightCharcoal

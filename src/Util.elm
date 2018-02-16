@@ -92,6 +92,28 @@ getArrayPositionForInsertion itemIndex array =
             OutOfBounds
 
 
+type MoveOperation
+    = MoveUp
+    | MoveDown
+
+-- moveItem : a -> MoveOperation -> Array a -> Array a
+-- moveItem itemToMove moveOp oldArray =
+-- let
+--     arrayLength = Array.length oldArray
+
+--     maybeTuple = Array.toIndexedList oldArray
+--                 |> List.filter (\a -> a == itemToMove)
+
+--     newArray = 
+-- in
+--     case maybeTuple of
+--         Nothing -> oldArray
+
+--         Just (index, item) ->
+--             if ((index == 0 && moveOp == MoveUp) || (index + 1 == arrayLength && moveOp == MoveDown) || arrayLength == 1)
+--                 then oldArray
+--             else 
+
 moveItemUp : Int -> Array a -> Array a
 moveItemUp itemIndex oldArray =
     let

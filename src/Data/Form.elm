@@ -159,100 +159,59 @@ getQuestionIndex form questionId =
                 Just index
 
 
-getChoiceWithId : Question -> ChoiceId -> Maybe Choice
-getChoiceWithId question choiceId =
-    case question.questionType of
-        ChoiceType choiceList ->
-            let
-                filteredList =
-                    List.filter (\c -> c.id == choiceId) choiceList
-            in
-                List.head filteredList
-
-        _ ->
-            Nothing
-
+getChoiceWithId : List Choice -> ChoiceId -> Maybe Choice
+getChoiceWithId choiceList choiceId =
+    let
+        filteredList =
+            List.filter (\c -> c.id == choiceId) choiceList
+    in
+        List.head filteredList
 
 
 -- Update --
 
 
-updateChoice : Form -> QuestionId -> ChoiceId -> Choice -> Form
-updateChoice oldForm questionId choiceId newChoice =
+-- updateChoice : List Choice -> ChoiceId -> Choice -> List Choice
+-- updateChoice oldChoices choiceId newChoice =
+--     let
+--         oldChoice =
+--             oldChoices
+--                 |> List.filter (\c -> c.id == choiceId)
+--                 |> List.head
+
+--         update oldChoice =
+--             if (oldChoice.id == choiceId) then
+--                 newChoice
+--             else
+--                 oldChoice
+--     in
+--         List.map update oldChoices
+
+type ChoiceField
+    = ChoiceId
+    | ChoiceText
+
+
+updateChoice : List Choice -> ChoiceId -> ChoiceField -> String -> List Choice
+updateChoice oldChoices choiceId field newValue =
     let
-        maybeOldQuestion =
-            getQuestionWitId oldForm questionId
+        updateChoice oldChoice =
+            if (oldChoice.id == choiceId) then
+                updateField oldChoice
+            else
+                oldChoice
 
-        oldChoices =
-            case maybeOldQuestion of
-                Nothing ->
-                    []
+        updateField oldChoice =
+            case field of
+                ChoiceId -> { oldChoice | id = newValue }
 
-                Just oldQuestion ->
-                    case oldQuestion.questionType of
-                        ChoiceType choiceList ->
-                            choiceList
-
-                        _ ->
-                            []
-
-        oldChoice =
-            oldChoices
-                |> List.filter (\c -> c.id == choiceId)
-                |> List.head
-
-        newChoices =
-            let
-                update oldChoice =
-                    if (oldChoice.id == choiceId) then
-                        newChoice
-                    else
-                        oldChoice
-            in
-                List.map update oldChoices
+                ChoiceText -> { oldChoice | choiceText = newValue }
     in
-        case maybeOldQuestion of
-            Nothing ->
-                oldForm
+        List.map updateChoice oldChoices
 
-            Just oldQuestion ->
-                if (List.isEmpty oldChoices) then
-                    oldForm
-                else
-                    updateFormWithQuestion oldForm questionId { oldQuestion | questionType = ChoiceType newChoices }
-
-
-updateChoiceId : Form -> QuestionId -> ChoiceId -> Int -> Form
-updateChoiceId oldForm questionId oldChoiceId newChoiceId =
-    let
-        maybeOldQuestion =
-            getQuestionWitId oldForm questionId
-    in
-        case maybeOldQuestion of
-            Nothing ->
-                oldForm
-
-            Just oldQuestion ->
-                case oldQuestion.questionType of
-                    ChoiceType choiceList ->
-                        let
-                            updateId choice =
-                                if (choice.id == oldChoiceId) then
-                                    { choice | id = toString newChoiceId }
-                                else
-                                    choice
-
-                            newChoices =
-                                List.map updateId choiceList
-
-                            newQuestion =
-                                { oldQuestion | questionType = ChoiceType newChoices }
-                        in
-                            updateFormWithQuestion oldForm oldQuestion.id newQuestion
-
-                    _ ->
-                        oldForm
-
+removeChoice : List Choice -> ChoiceId -> List Choice
+removeChoice oldChoices choiceId =
+    List.filter (\c -> c.id /= choiceId) oldChoices
 
 updateQuestionId : Form -> QuestionId -> Int -> Form
 updateQuestionId oldForm questionId newQuestionId =
