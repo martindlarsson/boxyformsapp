@@ -4,8 +4,8 @@ module Data.Form exposing (..)
 -- import Json.Decode.Pipeline exposing (decode, required, optional)
 
 import Data.User exposing (..)
-import Array exposing (..)
 import Util exposing (..)
+import Reorderable exposing (Reorderable)
 
 
 type alias Form =
@@ -17,21 +17,12 @@ type alias Form =
     , public : Bool
     , imgUrl : String
     , orgName : String
-    , questions : Array Question
+    , questions : Reorderable Question
     }
 
 
-type alias QuestionId =
-    String
-
-
-type alias ChoiceId =
-    String
-
-
 type alias Question =
-    { id : QuestionId
-    , questionText : String
+    { questionText : String
     , questionType : QuestionType
     }
 
@@ -39,15 +30,19 @@ type alias Question =
 type QuestionType
     = TextType
     | InfoType
-    | ChoiceType (List Choice)
+    | ChoiceType (Reorderable Choice)
     | YesNoType
 
 
 type alias Choice =
-    { id : ChoiceId
-    , choiceText : String
+    { choiceText : String
     }
 
+type alias QuestionIdx =
+    Int
+
+type alias ChoiceIdx =
+    Int
 
 
 -- TODO add lista med taggar (vilken typ av event)
@@ -63,22 +58,20 @@ emptyForm user =
     , public = False
     , imgUrl = ""
     , orgName = Maybe.withDefault "" user.orgName
-    , questions = Array.empty
+    , questions = Reorderable.empty
     }
 
 
 emptyQuestion : QuestionType -> Question
 emptyQuestion qType =
-    { id = "new" -- toString (Random.int Random.minInt Random.maxInt)
-    , questionText = ""
+    { questionText = ""
     , questionType = qType
     }
 
 
 emptyChoice : Choice
 emptyChoice =
-    { id = "new"
-    , choiceText = ""
+    { choiceText = ""
     }
 
 
@@ -105,165 +98,69 @@ emptyChoice =
 --         |> required "orgName" string
 --         |> required "questions" (List Question)
 -- Helper functions
--- getQuestionWitId : Array Question -> QuestionId -> Int -> Maybe ( Question, Int )
--- getQuestionWitId questions id startIndex =
---     case (Array.isEmpty questions) of
---         True ->
---             Nothing
---         False ->
---             let
---                 maybeFirstQuestion =
---                     Array.get 0 questions
---                 arrayLenght =
---                     Array.length questions
---                 restQuestions =
---                     Array.slice 1 arrayLenght questions
---             in
---                 case maybeFirstQuestion of
---                     Nothing ->
---                         Nothing
---                     Just firstQuestion ->
---                         if (firstQuestion.id == id) then
---                             Just ( firstQuestion, startIndex )
---                         else
---                             getQuestionWitId restQuestions id (startIndex + 1)
+
 -- Get --
 
+getIndexedList : Reorderable a -> List (Int, a)
+getIndexedList oldList =
+    List.indexedMap (,) 
+    <| Reorderable.toList oldList
 
-getQuestionWitId : Form -> QuestionId -> Maybe Question
-getQuestionWitId form questionId =
-    let
-        filteredArray =
-            Array.filter (\q -> q.id == questionId) form.questions
-    in
-        Array.get 0 filteredArray
-
-
-getQuestionIndex : Form -> QuestionId -> Maybe Int
-getQuestionIndex form questionId =
-    let
-        indexedArray =
-            Array.indexedMap (,) form.questions
-
-        filteredArray =
-            Array.filter (\( qIndex, question ) -> question.id == questionId) indexedArray
-
-        maybeQuestion =
-            Array.get 0 filteredArray
-    in
-        case maybeQuestion of
-            Nothing ->
-                Nothing
-
-            Just ( index, question ) ->
-                Just index
-
-
-getChoiceWithId : List Choice -> ChoiceId -> Maybe Choice
-getChoiceWithId choiceList choiceId =
-    let
-        filteredList =
-            List.filter (\c -> c.id == choiceId) choiceList
-    in
-        List.head filteredList
+getItem : Reorderable a -> Int -> Maybe a
+getItem oldList index =
+    Reorderable.get index oldList
 
 
 -- Update --
 
 
--- updateChoice : List Choice -> ChoiceId -> Choice -> List Choice
--- updateChoice oldChoices choiceId newChoice =
---     let
---         oldChoice =
---             oldChoices
---                 |> List.filter (\c -> c.id == choiceId)
---                 |> List.head
-
---         update oldChoice =
---             if (oldChoice.id == choiceId) then
---                 newChoice
---             else
---                 oldChoice
---     in
---         List.map update oldChoices
-
-type ChoiceField
-    = ChoiceId
-    | ChoiceText
-
-
-updateChoice : List Choice -> ChoiceId -> ChoiceField -> String -> List Choice
-updateChoice oldChoices choiceId field newValue =
+updateChoice : Reorderable Choice -> Int -> String -> Reorderable Choice
+updateChoice oldChoices index newValue =
     let
-        updateChoice oldChoice =
-            if (oldChoice.id == choiceId) then
-                updateField oldChoice
-            else
-                oldChoice
-
         updateField oldChoice =
-            case field of
-                ChoiceId -> { oldChoice | id = newValue }
-
-                ChoiceText -> { oldChoice | choiceText = newValue }
+            { oldChoice | choiceText = newValue }
     in
-        List.map updateChoice oldChoices
-
-removeChoice : List Choice -> ChoiceId -> List Choice
-removeChoice oldChoices choiceId =
-    List.filter (\c -> c.id /= choiceId) oldChoices
-
-updateQuestionId : Form -> QuestionId -> Int -> Form
-updateQuestionId oldForm questionId newQuestionId =
-    let
-        maybeOldQuestion =
-            getQuestionWitId oldForm questionId
-    in
-        case maybeOldQuestion of
-            Nothing ->
-                oldForm
-
-            Just oldQuestion ->
-                let
-                    newQuestion =
-                        { oldQuestion | id = toString newQuestionId }
-                in
-                    updateFormWithQuestion oldForm questionId newQuestion
+        Reorderable.update index updateField oldChoices
 
 
 addQuestion : Form -> QuestionType -> Int -> Form
 addQuestion oldForm qType index =
     let
-        questionToInsert =
-            emptyQuestion qType
+        questionToInsert = emptyQuestion qType
 
-        newQuestions =
-            insertItemIntoArray questionToInsert index oldForm.questions
+        newQuestions = Reorderable.insertAt index questionToInsert oldForm.questions
     in
         { oldForm | questions = newQuestions }
 
 
-removeQuestion : Form -> QuestionId -> Form
-removeQuestion oldForm questionId =
+updateQuestion : Reorderable Question -> Int -> (Question -> Question) -> Reorderable Question
+updateQuestion oldQuestions index newQuestionFunc =
+    Reorderable.update index newQuestionFunc oldQuestions
+
+
+updateFormWithQuestion : Form -> Int -> Question -> Form
+updateFormWithQuestion oldForm index newQuestion =
     let
-        newQuestions =
-            Array.filter (\q -> q.id /= questionId) oldForm.questions
+        updateQuestion_int oldQuestion = newQuestion
     in
-        { oldForm | questions = newQuestions }
+        { oldForm | questions = updateQuestion oldForm.questions index updateQuestion_int }
 
 
-updateQuestion : Array Question -> QuestionId -> Question -> Array Question
-updateQuestion oldQuestions questionId newQuestion =
-    let
-        update oldQuestion =
-            if (oldQuestion.id == questionId) then
-                newQuestion
-            else
-                oldQuestion
-    in
-        Array.map update oldQuestions
+-- General Reorderable
+
+moveItem : Reorderable a -> Int -> MoveOperation -> Reorderable a
+moveItem oldList index moveOp =
+    case moveOp of
+        MoveUp ->
+            Reorderable.moveUp index oldList
+        MoveDown ->
+            Reorderable.moveDown index oldList
+
+addItem : Reorderable a -> a -> Reorderable a
+addItem oldList item =
+    Reorderable.push item oldList
 
 
-updateFormWithQuestion : Form -> QuestionId -> Question -> Form
-updateFormWithQuestion oldForm questionId newQuestion =
-    { oldForm | questions = updateQuestion oldForm.questions questionId newQuestion }
+removeItem : Reorderable a -> Int -> Reorderable a
+removeItem oldList index =
+    Reorderable.drop index oldList
