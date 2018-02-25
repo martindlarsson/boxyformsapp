@@ -1,11 +1,6 @@
 module Page.Profile exposing (view, update, Msg)
 
 import Element exposing (..)
-
-
--- import Element.Attributes exposing (..)
-
-import BoxyStyle exposing (..)
 import Data.User as User exposing (..)
 import Ports exposing (saveUser)
 import Views.Form as Form exposing (..)

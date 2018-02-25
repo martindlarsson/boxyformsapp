@@ -1,8 +1,7 @@
 module Data.Form exposing (..)
 
--- import Json.Decode exposing (int, string, nullable, bool, Decoder, list, andThen, succeed)
--- import Json.Decode.Pipeline exposing (decode, required, optional)
-
+import Json.Decode exposing (int, string, nullable, bool, Decoder, list, andThen, succeed, map, oneOf)
+import Json.Decode.Pipeline exposing (decode, required, optional)
 import Data.User exposing (..)
 import Util exposing (..)
 import Reorderable exposing (Reorderable)
@@ -45,9 +44,6 @@ type alias ChoiceIdx =
     Int
 
 
--- TODO add lista med taggar (vilken typ av event)
-
-
 emptyForm : User -> Form
 emptyForm user =
     { id = "new form"
@@ -75,16 +71,15 @@ emptyChoice =
     }
 
 
+-- Decoder
+-- reorderable : Decoder a -> Decoder (Reorderable a)
+-- reorderable decoder = list decoder |> Json.Decode.map Reorderable.fromList
 
 -- decodeForm : Json.Decode.Value -> Result String Form
 -- decodeForm jsonForm =
 --     Json.Decode.decodeValue jsonFormDecoder jsonForm
--- decodeFormList : Json.Decode.Value -> Result String (List Form)
--- decodeFormList jsonFormList =
---     Json.Decode.decodeValue jsonFormListDecoder jsonFormList
--- jsonFormListDecoder : Decoder (List Form)
--- jsonFormListDecoder =
---     list jsonFormDecoder
+
+
 -- jsonFormDecoder : Decoder Form
 -- jsonFormDecoder =
 --     decode Form
@@ -95,8 +90,52 @@ emptyChoice =
 --         |> required "closeDate" string
 --         |> required "public" bool
 --         |> required "imgUrl" string
---         |> required "orgName" string
---         |> required "questions" (List Question)
+--         |> required "orgName" string        
+--         |> required "questions" (reorderable questionDecoder)
+
+-- questionDecoder : Decoder Question
+-- questionDecoder =
+--     decode Question
+--         |> required "questionText" string
+--         |> required "questionType" questionTypeDecoder
+
+-- questionTypeDecoder : Decoder QuestionType
+-- questionTypeDecoder =
+--     oneOf
+--         [ questionTextTypeDecoder
+--         , questionInfoTypeDecoder
+--         , questionYesNoTypeDecoder ]
+
+-- questionTextTypeDecoder : Decoder QuestionType
+-- questionTextTypeDecoder =
+--     succeed TextType
+
+-- questionInfoTypeDecoder : Decoder QuestionType
+-- questionInfoTypeDecoder =
+--     succeed InfoType
+
+-- questionChoiceTypeDecoder : Decoder QuestionType
+-- questionChoiceTypeDecoder =
+--     map
+--         (\response -> ChoiceType response.data)
+--         choiceListDecoder
+
+-- questionYesNoTypeDecoder : Decoder QuestionType
+-- questionYesNoTypeDecoder =
+--     succeed YesNoType
+
+-- choiceListDecoder : Decoder (Reorderable Choice)
+-- choiceListDecoder =
+--     decode (list Choice)
+--         |> reorderable choiceDecoder
+
+-- choiceDecoder : Decoder Choice
+-- choiceDecoder =
+--     decode Choice
+--         |> required "choiceText" string
+
+
+
 -- Helper functions
 
 -- Get --
@@ -123,14 +162,12 @@ updateChoice oldChoices index newValue =
         Reorderable.update index updateField oldChoices
 
 
-addQuestion : Form -> QuestionType -> Int -> Form
-addQuestion oldForm qType index =
+addQuestion : Reorderable Question -> QuestionType -> Int -> Reorderable Question
+addQuestion oldQuestions qType index =
     let
         questionToInsert = emptyQuestion qType
-
-        newQuestions = Reorderable.insertAt index questionToInsert oldForm.questions
     in
-        { oldForm | questions = newQuestions }
+        Reorderable.insertAt index questionToInsert oldQuestions
 
 
 updateQuestion : Reorderable Question -> Int -> (Question -> Question) -> Reorderable Question
@@ -145,22 +182,3 @@ updateFormWithQuestion oldForm index newQuestion =
     in
         { oldForm | questions = updateQuestion oldForm.questions index updateQuestion_int }
 
-
--- General Reorderable
-
-moveItem : Reorderable a -> Int -> MoveOperation -> Reorderable a
-moveItem oldList index moveOp =
-    case moveOp of
-        MoveUp ->
-            Reorderable.moveUp index oldList
-        MoveDown ->
-            Reorderable.moveDown index oldList
-
-addItem : Reorderable a -> a -> Reorderable a
-addItem oldList item =
-    Reorderable.push item oldList
-
-
-removeItem : Reorderable a -> Int -> Reorderable a
-removeItem oldList index =
-    Reorderable.drop index oldList

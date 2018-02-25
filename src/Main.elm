@@ -7,11 +7,11 @@ import Navigation exposing (Location)
 import Json.Decode as Decode exposing (Value)
 import Ports exposing (..)
 import Element as El exposing (..)
+import Element.Border as Border exposing (..)
 import Element.Keyed as Keyed exposing (..)
 import Element.Background as Background
 import Color
 import Element.Font as Font
-import Util exposing (..)
 import Html exposing (..)
 import Data.User as User exposing (..)
 import Page.Login as LoginPage exposing (view)
@@ -61,12 +61,12 @@ view model =
             if (device.phone) then
                 [ El.width fill, paddingXY 0 20 ]
             else if (device.tablet) then
-                [ El.width (px 600), center, paddingXY 0 20 ]
+                [ El.width (px 600), centerX, paddingXY 0 20 ]
             else
-                [ El.width (px 800), center, paddingXY 0 20 ]
+                [ El.width (px 800), centerX, paddingXY 0 20 ]
     in
         El.layout
-            [ Font.family [ Font.sansSerif ]
+            [ Font.family [ Font.sansSerif, Font.typeface "Open Sans" ]
             , Font.size 14
             , Font.color Color.charcoal
             , Background.color Color.lightGray
@@ -77,13 +77,12 @@ view model =
                 [ El.row
                     [ El.height (px 80)
                     , Background.color Color.lightOrange
-
-                    -- , Border.shadow
-                    --     { offset = ( 3, 0 )
-                    --     , blur = 2
-                    --     , size = 3
-                    --     , color = Color.darkGray
-                    --     }
+                    , Border.shadow
+                        { offset = ( 3, 0 )
+                        , blur = 2
+                        , size = 3
+                        , color = Color.darkGray
+                        }
                     ]
                     [ navigation model ]
                 , El.row
@@ -101,7 +100,7 @@ navigation model =
     in
         El.row
             [ centerY
-            , center
+            , centerX
             , padding 20
             ]
             [ link []
@@ -174,8 +173,8 @@ type Msg
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     let
-        _ =
-            Debug.log "update" msg
+        -- _ =
+        --     Debug.log "update" msg
 
         isUserDataOK =
             validateUser model.user
@@ -362,6 +361,14 @@ getDevice device =
 
         Just device ->
             device
+
+
+initialDevice : Device
+initialDevice =
+    classifyDevice
+        { width = 400
+        , height = 400
+        }
 
 
 pageToString : Page -> String

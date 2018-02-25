@@ -3,7 +3,7 @@ module Util exposing (..)
 import Html exposing (Attribute, Html)
 import Html.Events exposing (defaultOptions, onWithOptions)
 import Json.Decode as Decode
-import Array exposing (..)
+import Reorderable exposing (Reorderable)
 
 
 (=>) : a -> b -> ( a, b )
@@ -50,174 +50,25 @@ appendErrors model errors =
 
 
 
--- Array util functions
-
-
-type InArrayPosition
-    = First
-    | Middle
-    | Last
-    | OutOfBounds
-
-
-getArrayPosition : Int -> Array a -> InArrayPosition
-getArrayPosition itemIndex array =
-    let
-        arrayLength =
-            Array.length array
-    in
-        if (itemIndex == 0) then
-            First
-        else if (itemIndex == arrayLength - 1) then
-            Last
-        else if (itemIndex > 0 && itemIndex < arrayLength - 1) then
-            Middle
-        else
-            OutOfBounds
-
-
-getArrayPositionForInsertion : Int -> Array a -> InArrayPosition
-getArrayPositionForInsertion itemIndex array =
-    let
-        arrayLength =
-            Array.length array
-    in
-        if (itemIndex == 0) then
-            First
-        else if (itemIndex == arrayLength) then
-            Last
-        else if (itemIndex > 0 && itemIndex < arrayLength) then
-            Middle
-        else
-            OutOfBounds
-
+-- General Reorderable
 
 type MoveOperation
     = MoveUp
     | MoveDown
 
--- moveItem : a -> MoveOperation -> Array a -> Array a
--- moveItem itemToMove moveOp oldArray =
--- let
---     arrayLength = Array.length oldArray
+moveItem : Reorderable a -> Int -> MoveOperation -> Reorderable a
+moveItem oldList index moveOp =
+    case moveOp of
+        MoveUp ->
+            Reorderable.moveUp index oldList
+        MoveDown ->
+            Reorderable.moveDown index oldList
 
---     maybeTuple = Array.toIndexedList oldArray
---                 |> List.filter (\a -> a == itemToMove)
-
---     newArray = 
--- in
---     case maybeTuple of
---         Nothing -> oldArray
-
---         Just (index, item) ->
---             if ((index == 0 && moveOp == MoveUp) || (index + 1 == arrayLength && moveOp == MoveDown) || arrayLength == 1)
---                 then oldArray
---             else 
-
-moveItemUp : Int -> Array a -> Array a
-moveItemUp itemIndex oldArray =
-    let
-        arrayPosition =
-            getArrayPosition itemIndex oldArray
-    in
-        case arrayPosition of
-            First ->
-                oldArray
-
-            OutOfBounds ->
-                oldArray
-
-            _ ->
-                let
-                    maybeItemToMove =
-                        Array.get itemIndex oldArray
-                in
-                    case maybeItemToMove of
-                        Nothing ->
-                            oldArray
-
-                        Just itemToMove ->
-                            let
-                                maybeItemToSwitch =
-                                    Array.get (itemIndex - 1) oldArray
-                            in
-                                case maybeItemToSwitch of
-                                    Nothing ->
-                                        oldArray
-
-                                    Just itemToSwitch ->
-                                        let
-                                            intermediateArray =
-                                                Array.set (itemIndex - 1) itemToMove oldArray
-
-                                            newArray =
-                                                Array.set itemIndex itemToSwitch intermediateArray
-                                        in
-                                            newArray
+addItem : Reorderable a -> a -> Reorderable a
+addItem oldList item =
+    Reorderable.push item oldList
 
 
-insertItemIntoArray : a -> Int -> Array a -> Array a
-insertItemIntoArray itemToInsert atIndex oldArray =
-    let
-        inArrayPosition =
-            getArrayPositionForInsertion atIndex oldArray
-    in
-        case inArrayPosition of
-            First ->
-                Array.append (Array.fromList [ itemToInsert ]) oldArray
-
-            Middle ->
-                let
-                    firstHalf =
-                        Array.slice 0 atIndex oldArray
-
-                    secondHalf =
-                        Array.slice atIndex (Array.length oldArray) oldArray
-
-                    newFirstHalf =
-                        Array.append firstHalf (fromList [ itemToInsert ])
-
-                    newArray =
-                        Array.append newFirstHalf secondHalf
-                in
-                    newArray
-
-            Last ->
-                Array.push itemToInsert oldArray
-
-            OutOfBounds ->
-                oldArray
-
-
-{-| -}
-type alias Device =
-    { width : Int
-    , height : Int
-    , phone : Bool
-    , tablet : Bool
-    , desktop : Bool
-    , bigDesktop : Bool
-    , portrait : Bool
-    }
-
-
-initialDevice : Device
-initialDevice =
-    classifyDevice
-        { width = 400
-        , height = 400
-        }
-
-
-{-| Takes in a Window.Size and returns a device profile which can be used for responsiveness.
--}
-classifyDevice : { window | height : Int, width : Int } -> Device
-classifyDevice { width, height } =
-    { width = width
-    , height = height
-    , phone = width <= 600
-    , tablet = width > 600 && width <= 1200
-    , desktop = width > 1200 && width <= 1800
-    , bigDesktop = width > 1800
-    , portrait = width < height
-    }
+removeItem : Reorderable a -> Int -> Reorderable a
+removeItem oldList index =
+    Reorderable.drop index oldList

@@ -11,18 +11,17 @@ box : List (Attribute msg)
 box =
     [ Font.color Color.charcoal
     , Background.color Color.lightOrange
-    , Background.mouseOverColor Color.lightBlue
+    , mouseOver [ Background.color Color.lightBlue]
     , Border.color Color.charcoal
-    , center
+    , centerX
     , centerY
     , pointer
-
-    -- , Border.shadow
-    --     { offset = ( 5, 5 )
-    --     , size = 3
-    --     , blur = 20
-    --     , color = Color.darkGray
-    --     }
+    , Border.shadow
+        { offset = ( 2, 2 )
+        , blur = 6
+        , size = 3
+        , color = Color.darkGray
+        }
     ]
 
 

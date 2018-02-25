@@ -44,13 +44,7 @@ textInput inputType fieldLabel placeholder textValue msg ability =
             if (inputType == Singleline) then
                 [ height (px 40) ]
             else
-                [ height (px 80) ]
-
-        input =
-            if (inputType == Multiline) then
-                Input.multiline
-            else
-                Input.text
+                [ height (px 60) ]
 
         theLabel =
             case fieldLabel of
@@ -60,19 +54,29 @@ textInput inputType fieldLabel placeholder textValue msg ability =
                 Nothing ->
                     Input.labelAbove [] (El.empty)
     in
-        input (List.append fieldStyle boxHeight)
-            { onChange = onChangeMsg
-            , text = textValue
-            , placeholder = Just <| Input.placeholder [] (El.text placeholder)
-            , label = theLabel
-            , notice = Nothing
-            }
+        case inputType of
+            Multiline ->
+                Input.multiline (List.append fieldStyle boxHeight)
+                    { onChange = onChangeMsg
+                    , text = textValue
+                    , placeholder = Just <| Input.placeholder [] (El.text placeholder)
+                    , label = theLabel
+                    , spellcheck = False
+                    }
+
+            Singleline ->
+                Input.text (List.append fieldStyle boxHeight)
+                    { onChange = onChangeMsg
+                    , text = textValue
+                    , placeholder = Just <| Input.placeholder [] (El.text placeholder)
+                    , label = theLabel
+                    }
 
 
 button : String -> msg -> List (Attribute msg) -> Element msg
 button buttonText msg layout =
     row (List.concat [ box, layout, [ onClick msg ] ])
-        [ (El.text buttonText) ]
+        [ El.el [ centerX, centerY ] (El.text buttonText) ]
 
 
 checkbox : String -> (Bool -> msg) -> Bool -> Element msg
@@ -82,5 +86,4 @@ checkbox labelText msg value =
         , icon = Nothing
         , checked = value
         , label = Input.labelRight [] (El.text labelText)
-        , notice = Nothing
         }

@@ -12,13 +12,10 @@ import Data.User as User exposing (..)
 import Views.Form as FormView exposing (..)
 import Data.Form as Form exposing (..)
 import FeatherIcons
-import Array exposing (..)
-import Random exposing (..)
 import Util exposing (..)
 import Reorderable exposing (Reorderable)
 
 
--- import Html.Attributes exposing (title)
 -- Msg --
 
 
@@ -105,8 +102,10 @@ update msg model =
 
             UpdateQuestion questionOperation ->
                 let
-                    ( newForm, newControlHoverState ) =
-                        updateQuestion oldForm questionOperation model.controlHoverState
+                    ( newQuestions, newControlHoverState ) =
+                        updateQuestion oldForm.questions questionOperation model.controlHoverState
+
+                    newForm = { oldForm | questions = newQuestions }
                 in
                     ( { model | form = newForm, controlHoverState = newControlHoverState }, Cmd.none )
 
@@ -133,15 +132,15 @@ updateFormMetadata oldForm field =
             { oldForm | public = value }
 
 
-updateQuestion : Form -> QuestionOperation -> ControlHover -> ( Form, ControlHover )
-updateQuestion oldForm qOperation oldControlHoverState =
+updateQuestion : Reorderable Question -> QuestionOperation -> ControlHover -> ( Reorderable Question, ControlHover )
+updateQuestion oldQuestions qOperation oldControlHoverState =
     let
         errorReturn =
-            ( oldForm, oldControlHoverState )
+            ( oldQuestions, oldControlHoverState )
     in
         case qOperation of
             AddQuestion qType index ->
-                ( addQuestion oldForm qType index
+                ( addQuestion oldQuestions qType index
                 , oldControlHoverState
                 )
 
@@ -150,29 +149,32 @@ updateQuestion oldForm qOperation oldControlHoverState =
                     updateQuestionText oldQuestion = 
                         { oldQuestion | questionText = newText }
 
-                    newQuestions = Form.updateQuestion oldForm.questions questionIdx updateQuestionText
+                    newQuestions = Form.updateQuestion oldQuestions questionIdx updateQuestionText
                 in
-                    ( { oldForm | questions = newQuestions }, oldControlHoverState )
+                    ( newQuestions, oldControlHoverState )
 
             MoveQuestionUp questionIdx ->
                 let
-                    newQuestions = moveItem oldForm.questions questionIdx MoveUp
+                    newQuestions = moveItem oldQuestions questionIdx MoveUp
                 in
-                    ( { oldForm | questions = newQuestions }, oldControlHoverState )
+                    ( newQuestions, oldControlHoverState )
 
             MoveQuestionDown questionIdx ->
                 let
-                    newQuestions = moveItem oldForm.questions questionIdx MoveDown
+                    newQuestions = moveItem oldQuestions questionIdx MoveDown
                 in
-                    ( { oldForm | questions = newQuestions }, oldControlHoverState )
+                    ( newQuestions , oldControlHoverState )
 
             RemoveQuestion questionIdx ->
-                ( { oldForm | questions = removeItem oldForm.questions questionIdx }, oldControlHoverState )
+                let
+                    newQuestions = removeItem oldQuestions questionIdx 
+                in
+                    ( newQuestions , oldControlHoverState )
 
             UpdateChoice questionIdx choiceOperation ->
                 let
                     maybeOldQuestion =
-                        getItem oldForm.questions questionIdx
+                        getItem oldQuestions questionIdx
                 in
                     case maybeOldQuestion of
                         Nothing ->
@@ -182,24 +184,24 @@ updateQuestion oldForm qOperation oldControlHoverState =
                             case oldQuestion.questionType of
                                 ChoiceType choiceList ->
                                     let
-                                        newChoices =
-                                            updateChoice questionIdx choiceList choiceOperation
+                                        newChoices = updateChoice questionIdx choiceList choiceOperation
 
-                                        newQuestion =
-                                            { oldQuestion | questionType = ChoiceType newChoices }
+                                        newQuestion = { oldQuestion | questionType = ChoiceType newChoices }
 
-                                        newForm = updateFormWithQuestion oldForm questionIdx newQuestion
+                                        replaceOldQuestion oldQuestion = newQuestion
+
+                                        newQuestions = Form.updateQuestion oldQuestions questionIdx replaceOldQuestion
                                     in
-                                        (newForm, oldControlHoverState )
+                                        (newQuestions, oldControlHoverState )
 
                                 _ ->
                                     errorReturn
 
             AddQuestionControlHover controlIndex ->
-                ( oldForm, Hovering controlIndex )
+                ( oldQuestions, Hovering controlIndex )
 
             AddQuestionControlNoHover ->
-                ( oldForm, NoControl )
+                ( oldQuestions, NoControl )
 
 
 updateChoice : QuestionIdx -> Reorderable Choice -> ChoiceOperation -> Reorderable Choice
@@ -207,19 +209,19 @@ updateChoice questionIdx oldChoices choiceOp =
     
     case choiceOp of
         AddChoice ->
-            Form.addItem oldChoices emptyChoice
+            Util.addItem oldChoices emptyChoice
 
         UpdateChoiceText choiceIdx newText ->
             Form.updateChoice oldChoices choiceIdx newText
 
         MoveChoiceUp choiceIdx ->
-            Form.moveItem oldChoices choiceIdx MoveUp
+            Util.moveItem oldChoices choiceIdx MoveUp
 
         MoveChoiceDown choiceIdx ->
-            Form.moveItem oldChoices choiceIdx MoveDown
+            Util.moveItem oldChoices choiceIdx MoveDown
 
         RemoveChoice choiceIdx ->
-            Form.removeItem oldChoices choiceIdx
+            Util.removeItem oldChoices choiceIdx
 
 
 
@@ -291,7 +293,7 @@ questionsView model =
 questionTuple : ControlHover -> Question -> Int -> Device -> Element QuestionOperation
 questionTuple hoverState question index device =
                 Element.column
-                    []
+                    [ spacing 20, padding 10 ]
                     [ questionView question index
                     , addQuestionView hoverState (index + 1) device
                     ]
@@ -330,11 +332,12 @@ addQuestionView hoverState index device =
             [ Font.size 40
             , Font.color Color.darkGray
             , Background.color Color.lightGray
-            , center
-            , spacingXY 5 10
-            , padding 10
+            -- , spacing 20
+            -- , padding 10
             , centerY
-            , width (px 250)
+            , centerX
+            , width (px 350)
+            , height (px 40)
             , onMouseEnter (AddQuestionControlHover index)
             , onMouseLeave AddQuestionControlNoHover
             ]
@@ -344,14 +347,21 @@ addQuestionView hoverState index device =
 addQuestionButton : FeatherIcons.Icon -> String -> QuestionOperation -> Element QuestionOperation
 addQuestionButton icon titleText msg =
     Element.column
-        [ centerY, center, pointer, Font.color Color.darkGray, Font.mouseOverColor Color.lightCharcoal, onClick msg, width (px 60), padding 10 ]
+        [ centerY
+        , centerX
+        , pointer
+        , Font.color Color.darkGray
+        , mouseOver [ Font.color Color.lightCharcoal ]
+        , onClick msg
+        , width (px 80)
+        , padding 10 ]
         [ Element.el
-            []
+            [ centerY, centerX ]
             --, Element.Attributes.toAttr (Html.Attributes.title titleText)
             (Element.html
                 (icon |> FeatherIcons.toHtml [])
             )
-        , Element.el [ Font.size 10 ] (Element.text titleText)
+        , Element.el [ Font.size 10, centerX, centerY ] (Element.text titleText)
         ]
 
 
@@ -379,17 +389,16 @@ questionView question questionIndex =
             [ Background.color Color.lightOrange
             , spacing 10
             , padding 10
-
-            -- , Border.shadow
-            --     { offset = ( 5, 5 )
-            --     , size = 3
-            --     , blur = 20
-            --     , color = Color.darkGray
-            --     }
+            , Border.shadow
+                { offset = ( 5, 5 )
+                , size = 3
+                , blur = 20
+                , color = Color.darkGray
+                }
             ]
             [ Element.row [ height (px 25) ]
-                [ Element.column [ centerY, alignLeft ] [ Element.text labelText ]
-                , Element.column [ width (px 80), alignRight, centerY ] [questionButtons questionIndex] ]
+                [ Element.column [ centerY ] [ Element.el [ alignLeft, centerY, Font.size 18 ] ( Element.text labelText ) ]
+                , Element.column [ width (px 100), alignRight, centerY, spacing 5 ] [questionButtons questionIndex] ]
             , Element.row [  ] [ questionContent ]
             ]
 
@@ -445,7 +454,7 @@ choiceQuestion question questionIdx choiceList =
                 question.questionText
                 (UpdateQuestionText questionIdx)
                 Enabled
-            , Element.row [ Font.alignLeft ] [ Element.text "Val" ]
+            , Element.row [ ] [ Element.el [ alignLeft ] (Element.text "Val" ) ]
             , Keyed.row
                 [ Background.color Color.white
                 , height (px elementHeight)
@@ -480,9 +489,9 @@ choiceView choice choiceIdx questionIdx =
         ]
         [ Element.column [ width fill, centerY ]
             [ FormView.textInput Singleline Nothing choice.choiceText choice.choiceText (\text -> (UpdateChoice questionIdx (UpdateChoiceText choiceIdx text))) Enabled ]
-        , Element.column [ width (px 100), centerY ]
+        , Element.column [ width (px 100), centerY, centerX ]
             [ Element.row
-                [ center, centerY, padding 5, spacing 5, Font.size 5 ]
+                [ centerX, centerY, padding 5, spacing 5, Font.size 5 ]
                 [ (iconButton FeatherIcons.arrowUp "Flytta upp" (UpdateChoice questionIdx (MoveChoiceUp choiceIdx)))
                 , (iconButton FeatherIcons.trash2 "Radera" (UpdateChoice questionIdx (RemoveChoice choiceIdx)))
                 , (iconButton FeatherIcons.arrowDown "Flytta ned" (UpdateChoice questionIdx (MoveChoiceDown choiceIdx)))
@@ -494,7 +503,7 @@ choiceView choice choiceIdx questionIdx =
 questionButtons : QuestionIdx -> Element QuestionOperation
 questionButtons questionIdx =
     Element.row
-        [ center, centerY, padding 5, spacing 10 ]
+        [ centerX, centerY, padding 5, spacing 10 ]
         [ (iconButton FeatherIcons.arrowUp "Flytta upp" (MoveQuestionUp questionIdx))
         , (iconButton FeatherIcons.trash2 "Radera" (RemoveQuestion questionIdx))
         , (iconButton FeatherIcons.arrowDown "Flytta ned" (MoveQuestionDown questionIdx))
@@ -505,9 +514,11 @@ iconButton : FeatherIcons.Icon -> String -> QuestionOperation -> Element Questio
 iconButton icon titleText msg =
     Element.el
         [ Font.color Color.lightCharcoal
-        , Font.mouseOverColor Color.charcoal
+        , mouseOver [ Font.color Color.charcoal ]
         , onClick msg
         , pointer
+        , centerY
+        , centerX
         ]
         (Element.html
             (icon |> FeatherIcons.toHtml [])
