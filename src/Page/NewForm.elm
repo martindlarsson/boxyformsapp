@@ -14,6 +14,7 @@ import Data.Form as Form exposing (..)
 import FeatherIcons
 import Util exposing (..)
 import Reorderable exposing (Reorderable)
+import Ports exposing (saveForm)
 
 
 -- Msg --
@@ -23,6 +24,7 @@ type Msg
     = SaveForm
     | UpdateFormMeta Field
     | UpdateQuestion QuestionOperation
+    | UpdateFormId FormId
 
 
 type QuestionOperation
@@ -95,7 +97,10 @@ update msg model =
     in
         case msg of
             SaveForm ->
-                ( model, Cmd.none )
+                let
+                    _ = Debug.log "SaveForm" "Button pressed"
+                in
+                ( model, saveForm (encodeForm model.form) )
 
             UpdateFormMeta field ->
                 ( { model | form = updateFormMetadata oldForm field }, Cmd.none )
@@ -108,6 +113,9 @@ update msg model =
                     newForm = { oldForm | questions = newQuestions }
                 in
                     ( { model | form = newForm, controlHoverState = newControlHoverState }, Cmd.none )
+            
+            UpdateFormId newFormId ->
+                ( { model | form = { oldForm | id = newFormId }}, Cmd.none )
 
 
 updateFormMetadata : Form -> Field -> Form

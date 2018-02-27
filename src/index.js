@@ -76,6 +76,28 @@ app.ports.saveUser.subscribe(function (user) {
     });
 });
 
+// Save form data on Firebase
+app.ports.saveForm.subscribe(function (form) {
+    if (form.id === "new form") {
+        db.collection("forms").add(form)
+        .then(function(docRef) {
+            // console.log("Document successfully written!", docRef.id);
+            app.ports.formSaved.send(docRef.id);
+        })
+        .catch(function(error) {
+            console.error("Error writing document: ", error);
+        });
+    } else {
+        db.collection("forms").doc(form.id).set(form)
+        .then(function() {
+            // console.log("Document successfully written!");
+        })
+        .catch(function(error) {
+            console.error("Error writing document: ", error);
+        });
+    }
+});
+
 
 // Lyssna på events när användaren loggat in eller ut
 firebase.auth().onAuthStateChanged(function(user) {

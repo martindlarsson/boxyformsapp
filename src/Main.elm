@@ -168,6 +168,7 @@ type Msg
     | ProfilePageMsg ProfilePage.Msg
     | HomePageMsg HomePage.Msg
     | NewFormPageMsg NewFormPage.Msg
+    | FormSaved String
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -260,6 +261,18 @@ update msg model =
                 in
                     ( { model | activePage = NewForm newFormPageModel }, Cmd.map NewFormPageMsg cmd )
 
+            -- Ett formulär har sparats, nytt id returneras
+            ( FormSaved formId, _ ) ->
+                case model.activePage of
+                    NewForm pageModel ->
+                        let
+                            ( newFormPageModel, cmd ) =
+                                NewFormPage.update (NewFormPage.UpdateFormId formId) pageModel
+                        in
+                            ( { model | activePage = NewForm newFormPageModel }, Cmd.map NewFormPageMsg cmd )
+                    _ ->
+                    ( model, Cmd.none )
+
             ( _, _ ) ->
                 -- Throw away any stray messages
                 ( model, Cmd.none )
@@ -321,6 +334,7 @@ subscriptions model =
         [ Ports.userLoggedIn UserLoggedIn
         , Ports.userLoggedOut (\_ -> UserLoggedOut)
         , Window.resizes (\wSize -> WindowResize wSize)
+        , Ports.formSaved FormSaved
         ]
 
 

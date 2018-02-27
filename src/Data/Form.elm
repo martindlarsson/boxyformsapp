@@ -1,14 +1,16 @@
 module Data.Form exposing (..)
 
-import Json.Decode exposing (int, string, nullable, bool, Decoder, list, andThen, succeed, map, oneOf)
-import Json.Decode.Pipeline exposing (decode, required, optional)
+import Json.Decode as JD exposing (..)
+import Json.Decode.Pipeline exposing (..)
+import Json.Encode as JE exposing (..)
 import Data.User exposing (..)
-import Util exposing (..)
 import Reorderable exposing (Reorderable)
 
 
+type alias FormId = String
+
 type alias Form =
-    { id : String
+    { id : FormId
     , name : String
     , description : String
     , dateFrom : String
@@ -70,69 +72,98 @@ emptyChoice =
     { choiceText = ""
     }
 
+-- Encoder
+encodeForm : Form -> JE.Value
+encodeForm form =
+    JE.object
+        [ ("id", JE.string form.id)
+        , ("name", JE.string form.name)
+        , ("description", JE.string form.description)
+        , ("dateFrom", JE.string form.dateFrom)
+        , ("dateTo", JE.string form.dateTo)
+        , ("public", JE.bool form.public)
+        , ("imgUrl", JE.string form.imgUrl)
+        , ("orgName", JE.string form.orgName)
+        , ("questions", JE.list (encodeQuestions form.questions))
+        ]
+
+encodeQuestions : Reorderable Question -> List JE.Value
+encodeQuestions questions =
+    List.map encodeQuestion (Reorderable.toList questions)
+
+encodeQuestion : Question -> JE.Value
+encodeQuestion question =
+    JE.object
+        [ ("questionText", JE.string question.questionText)
+        , ("questionType", encodeQuestionType question.questionType)
+        ]
+
+encodeQuestionType : QuestionType -> JE.Value
+encodeQuestionType questionType =
+    case questionType of
+      TextType -> JE.object [ ( "type", JE.string "text" ) ]
+      InfoType -> JE.object [ ( "type", JE.string "info") ]
+      ChoiceType choices -> JE.object [ ( "type", JE.string "choice" ), ( "choices", JE.list (encodeChoices choices) ) ]
+      YesNoType -> JE.object [ ( "type", JE.string "yesno") ]
+
+
+encodeChoices : Reorderable Choice -> List JE.Value
+encodeChoices choices =
+    List.map encodeChoice (Reorderable.toList choices)
+
+encodeChoice : Choice -> JE.Value
+encodeChoice choice =
+    JE.object [ ( "choiceText", JE.string choice.choiceText ) ]
+
 
 -- Decoder
--- reorderable : Decoder a -> Decoder (Reorderable a)
--- reorderable decoder = list decoder |> Json.Decode.map Reorderable.fromList
+reorderable : Decoder a -> Decoder (Reorderable a)
+reorderable decoder = JD.list decoder |> JD.map Reorderable.fromList
 
--- decodeForm : Json.Decode.Value -> Result String Form
--- decodeForm jsonForm =
---     Json.Decode.decodeValue jsonFormDecoder jsonForm
+decodeForm : JD.Value -> Result String Form
+decodeForm jsonForm =
+    JD.decodeValue formDecoder jsonForm
 
 
--- jsonFormDecoder : Decoder Form
--- jsonFormDecoder =
---     decode Form
---         |> required "id" string
---         |> required "name" string
---         |> required "description" string
---         |> required "openDate" string
---         |> required "closeDate" string
---         |> required "public" bool
---         |> required "imgUrl" string
---         |> required "orgName" string        
---         |> required "questions" (reorderable questionDecoder)
+formDecoder : Decoder Form
+formDecoder =
+    decode Form
+        |> required "id" JD.string
+        |> required "name" JD.string
+        |> required "description" JD.string
+        |> required "openDate" JD.string
+        |> required "closeDate" JD.string
+        |> required "public" JD.bool
+        |> required "imgUrl" JD.string
+        |> required "orgName" JD.string        
+        |> required "questions" (reorderable questionDecoder)
 
--- questionDecoder : Decoder Question
--- questionDecoder =
---     decode Question
---         |> required "questionText" string
---         |> required "questionType" questionTypeDecoder
+questionDecoder : Decoder Question
+questionDecoder =
+    decode Question
+        |> required "questionText" JD.string
+        |> required "questionType" questionTypeDecoder
 
--- questionTypeDecoder : Decoder QuestionType
--- questionTypeDecoder =
---     oneOf
---         [ questionTextTypeDecoder
---         , questionInfoTypeDecoder
---         , questionYesNoTypeDecoder ]
+questionTypeDecoder : Decoder QuestionType
+questionTypeDecoder =
+    field "type" JD.string
+    |> andThen (\typeString ->
+      case typeString of
+        "text" -> succeed TextType
+        "info" -> succeed InfoType
+        "choice" -> map ChoiceType (field "choices" choiceListDecoder)
+        "yesno" -> succeed YesNoType
+        _ -> fail "I don't know how to decode that type yet"
+    )
 
--- questionTextTypeDecoder : Decoder QuestionType
--- questionTextTypeDecoder =
---     succeed TextType
+choiceListDecoder : Decoder (Reorderable Choice)
+choiceListDecoder =
+    reorderable choiceDecoder
 
--- questionInfoTypeDecoder : Decoder QuestionType
--- questionInfoTypeDecoder =
---     succeed InfoType
-
--- questionChoiceTypeDecoder : Decoder QuestionType
--- questionChoiceTypeDecoder =
---     map
---         (\response -> ChoiceType response.data)
---         choiceListDecoder
-
--- questionYesNoTypeDecoder : Decoder QuestionType
--- questionYesNoTypeDecoder =
---     succeed YesNoType
-
--- choiceListDecoder : Decoder (Reorderable Choice)
--- choiceListDecoder =
---     decode (list Choice)
---         |> reorderable choiceDecoder
-
--- choiceDecoder : Decoder Choice
--- choiceDecoder =
---     decode Choice
---         |> required "choiceText" string
+choiceDecoder : Decoder Choice
+choiceDecoder =
+    decode Choice
+        |> required "choiceText" JD.string
 
 
 
