@@ -69,6 +69,7 @@ app.ports.saveUser.subscribe(function (user) {
     // console.log('Sparar användaren: ', user);
     db.collection("users").doc(user.id).set(user)
     .then(function() {
+        app.ports.userSaved.send(user);
         // console.log("Document successfully written!");
     })
     .catch(function(error) {
@@ -96,6 +97,36 @@ app.ports.saveForm.subscribe(function (form) {
             console.error("Error writing document: ", error);
         });
     }
+});
+
+app.ports.getPublicForms.subscribe(() => {
+    db.collection("forms").where("public", "==", true)
+    .get()
+    .then(function(querySnapshot) {
+        querySnapshot.forEach(function(doc) {
+            console.log(doc.id, " => ", doc.data());
+        });
+
+        app.ports.gotForms.send(querySnapshot);
+    })
+    .catch(function(error) {
+        console.log("Error getting documents: ", error);
+    });
+});
+
+app.ports.getMyForms.subscribe((userId) => {
+    db.collection("forms").where("public", "==", true)
+    .get()
+    .then(function(querySnapshot) {
+        querySnapshot.forEach(function(doc) {
+            console.log(doc.id, " => ", doc.data());
+        });
+
+        app.ports.gotForms.send(querySnapshot);
+    })
+    .catch(function(error) {
+        console.log("Error getting documents: ", error);
+    });
 });
 
 

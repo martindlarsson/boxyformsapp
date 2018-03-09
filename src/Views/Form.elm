@@ -21,8 +21,13 @@ type TextInputType
 
 infoBox : String -> Element msg
 infoBox infoString =
-    row [ Background.color Color.lightBlue, height (px 3) ]
-        [ paragraph [ Background.color Color.white, padding 10 ] [ El.text infoString ] ]
+    El.paragraph
+        [ Background.color Color.gray
+        , padding 10
+        , Border.dashed
+        , Border.color Color.white
+        , Border.width 4]
+        [ El.text infoString ]
 
 
 textInput : TextInputType -> Maybe String -> String -> String -> (String -> msg) -> Ability -> Element msg

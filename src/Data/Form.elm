@@ -18,6 +18,7 @@ type alias Form =
     , public : Bool
     , imgUrl : String
     , orgName : String
+    , userId : String
     , questions : Reorderable Question
     }
 
@@ -56,6 +57,7 @@ emptyForm user =
     , public = False
     , imgUrl = ""
     , orgName = Maybe.withDefault "" user.orgName
+    , userId = user.id
     , questions = Reorderable.empty
     }
 
@@ -84,6 +86,7 @@ encodeForm form =
         , ("public", JE.bool form.public)
         , ("imgUrl", JE.string form.imgUrl)
         , ("orgName", JE.string form.orgName)
+        , ("userId", JE.string form.userId)
         , ("questions", JE.list (encodeQuestions form.questions))
         ]
 
@@ -135,7 +138,8 @@ formDecoder =
         |> required "closeDate" JD.string
         |> required "public" JD.bool
         |> required "imgUrl" JD.string
-        |> required "orgName" JD.string        
+        |> required "orgName" JD.string
+        |> required "userId" JD.string         
         |> required "questions" (reorderable questionDecoder)
 
 questionDecoder : Decoder Question

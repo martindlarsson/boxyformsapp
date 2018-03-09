@@ -1,7 +1,7 @@
-module Page.Profile exposing (view, update, Msg)
+module Page.Profile exposing (view, update, Msg(..), Model, init)
 
 import Element exposing (..)
-import Data.User as User exposing (..)
+import Data.User exposing (..)
 import Ports exposing (saveUser)
 import Views.Form as Form exposing (..)
 
@@ -12,6 +12,7 @@ import Views.Form as Form exposing (..)
 type Msg
     = TextChanged Field String
     | SaveUser
+    | UserSaved User
 
 
 type Field
@@ -19,46 +20,66 @@ type Field
     | OrgName
 
 
+type alias Model =
+    { user : User
+    , userSaved : Bool
+    }
+
+
+init : User -> Model
+init user =
+    Model user False
+
+
 
 -- Update --
 
 
-update : Msg -> User -> ( User, Cmd msg )
-update msg user =
-    case msg of
-        TextChanged field newText ->
-            case field of
-                NoField ->
-                    ( user, Cmd.none )
+update : Msg -> Model -> ( Model, Cmd msg )
+update msg model =
+    let
+        user =
+            model.user
+    in
+        case msg of
+            TextChanged field newText ->
+                case field of
+                    NoField ->
+                        ( model, Cmd.none )
 
-                OrgName ->
-                    ( { user | orgName = Just newText }, Cmd.none )
+                    OrgName ->
+                        let
+                            newUser =
+                                { user | orgName = Just newText }
+                        in
+                            ( { model | user = newUser }, Cmd.none )
 
-        SaveUser ->
-            ( user, saveUser (encode user) )
+            SaveUser ->
+                ( model, saveUser (encode user) )
+
+            UserSaved newUser ->
+                ( { model | user = newUser, userSaved = True }, Cmd.none )
 
 
 
 -- VIEW --
 
 
-view : User -> Element Msg
-view user =
+view : Model -> Element Msg
+view model =
     let
-        orgName =
-            case user.orgName of
-                Nothing ->
-                    ""
+        user =
+            model.user
 
-                Just name ->
-                    name
+        orgName =
+            Maybe.withDefault "" user.orgName
 
         isUserValid =
-            validateUser (Just user)
+            validateUser <| Just user
     in
         column
             [ alignTop, spacing 20 ]
-            [ if (isUserValid == UserNeedsMoreInfo) then
+            [ if (isUserValid == UserNeedsMoreInfo || (isUserValid == UserIsOK && model.userSaved == False)) then
                 (Form.infoBox "Jag vill be dig fylla i detta formulär innan du går vidare och skapar dina egna formulär. Om du inte tillhör en organisation kan du fylla i ditt namn under visningsnamn. Jag använder visningsnamn i dina formulär som författaren av formuläret.")
               else
                 Element.empty

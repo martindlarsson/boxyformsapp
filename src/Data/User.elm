@@ -5,7 +5,6 @@ import Json.Decode.Pipeline as Pipeline exposing (decode, required, hardcoded)
 import Json.Encode as Encode exposing (Value)
 import Json.Encode.Extra as EncodeExtra
 import Util exposing ((=>))
-import UrlParser
 
 
 type alias User =
@@ -50,11 +49,6 @@ encode user =
 
 type Username
     = Username String
-
-
-usernameParser : UrlParser.Parser (String -> a) a
-usernameParser =
-    UrlParser.custom "USERNAME" Ok
 
 
 type UserState

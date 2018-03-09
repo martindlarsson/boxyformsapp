@@ -10,4 +10,4 @@ import Html.Attributes exposing (class, id)
 
 view : Element msg
 view =
-    el [] (Element.html (div [ id "firebaseui-auth-container" ] []))
+    el [ width fill ] (Element.html (div [ id "firebaseui-auth-container" ] []))

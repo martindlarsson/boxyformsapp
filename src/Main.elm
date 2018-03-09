@@ -16,7 +16,7 @@ import Html exposing (..)
 import Data.User as User exposing (..)
 import Page.Login as LoginPage exposing (view)
 import Page.Home as HomePage exposing (view, update, Msg)
-import Page.Profile as ProfilePage exposing (view, update, Msg)
+import Page.Profile as ProfilePage exposing (view, update, Msg(..))
 import Page.NewForm as NewFormPage exposing (view, update, Msg)
 
 
@@ -34,7 +34,7 @@ type Page
     | NewForm NewFormPage.Model
     | MyForms
     | Login
-    | Profile User
+    | Profile ProfilePage.Model
 
 
 init : Value -> Location -> ( Model, Cmd Msg )
@@ -122,9 +122,14 @@ signInLink model =
 
         activeRoute =
             model.activeRoute
+
+        userState =
+            validateUser user
     in
         if (user == Nothing) then
             [ link [] { url = (routeToString Route.Login), label = (El.el (navStyle activeRoute Route.Login) (El.text "Logga in")) } ]
+        else if (userState == UserNeedsMoreInfo) then
+            [ link [] { url = (routeToString Route.Logout), label = (El.el [ Font.size 16 ] (El.text "Logga ut")) } ]
         else
             [ link [] { url = (routeToString Route.NewForm), label = (El.el (navStyle activeRoute Route.NewForm) (El.text "Nytt formulär")) }
             , link [] { url = (routeToString Route.MyForms), label = (El.el (navStyle activeRoute Route.MyForms) (El.text "Mina formulär")) }
@@ -148,8 +153,8 @@ viewPage page model =
         NewForm pageModel ->
             Keyed.row [] [ ( "new_form", (El.map NewFormPageMsg (NewFormPage.view pageModel)) ) ]
 
-        Profile user ->
-            Keyed.row [] [ ( "profile_page", (El.map ProfilePageMsg (ProfilePage.view user)) ) ]
+        Profile model ->
+            Keyed.row [] [ ( "profile_page", (El.map ProfilePageMsg (ProfilePage.view model)) ) ]
 
         Login ->
             LoginPage.view
@@ -165,6 +170,7 @@ type Msg
     | SetRoute (Maybe Route)
     | UserLoggedIn Value
     | UserLoggedOut
+    | UserSaved Value
     | ProfilePageMsg ProfilePage.Msg
     | HomePageMsg HomePage.Msg
     | NewFormPageMsg NewFormPage.Msg
@@ -176,7 +182,6 @@ update msg model =
     let
         -- _ =
         --     Debug.log "update" msg
-
         isUserDataOK =
             validateUser model.user
 
@@ -244,12 +249,36 @@ update msg model =
                 in
                     setRoute (Just Route.Home) updatedModel
 
+            ( UserSaved value, _ ) ->
+                let
+                    userResult =
+                        Decode.decodeValue User.decoder value
+
+                    loggedInUser =
+                        case userResult of
+                            Ok user ->
+                                Just user
+
+                            Err str ->
+                                Nothing
+                in
+                    case ( model.activePage, loggedInUser ) of
+                        ( Profile oldPageModel, Just newUser ) ->
+                            let
+                                ( newPageModel, cmd ) =
+                                    ProfilePage.update (ProfilePage.UserSaved newUser) oldPageModel
+                            in
+                                ( { model | activePage = Profile newPageModel, user = loggedInUser }, cmd )
+
+                        _ ->
+                            ( { model | user = loggedInUser }, Cmd.none )
+
             ( ProfilePageMsg subMsg, Profile subModel ) ->
                 let
-                    ( newUser, cmd ) =
+                    ( pageModel, cmd ) =
                         ProfilePage.update subMsg subModel
                 in
-                    ( { model | user = Just newUser }, cmd )
+                    ( { model | activePage = Profile pageModel }, cmd )
 
             ( HomePageMsg subMsg, _ ) ->
                 update (SetRoute (Just Route.NewForm)) model
@@ -270,8 +299,9 @@ update msg model =
                                 NewFormPage.update (NewFormPage.UpdateFormId formId) pageModel
                         in
                             ( { model | activePage = NewForm newFormPageModel }, Cmd.map NewFormPageMsg cmd )
+
                     _ ->
-                    ( model, Cmd.none )
+                        ( model, Cmd.none )
 
             ( _, _ ) ->
                 -- Throw away any stray messages
@@ -303,7 +333,7 @@ setRoute maybeRoute model =
                     ( { model | activePage = Home, activeRoute = Route.Home }, Cmd.none )
 
                 Just logedInUser ->
-                    ( { model | activePage = (Profile logedInUser), activeRoute = Route.Profile }, Cmd.none )
+                    ( { model | activePage = (Profile (ProfilePage.init logedInUser)), activeRoute = Route.Profile }, Cmd.none )
 
         Just Route.NewForm ->
             case model.user of
@@ -333,6 +363,7 @@ subscriptions model =
     Sub.batch
         [ Ports.userLoggedIn UserLoggedIn
         , Ports.userLoggedOut (\_ -> UserLoggedOut)
+        , Ports.userSaved UserSaved
         , Window.resizes (\wSize -> WindowResize wSize)
         , Ports.formSaved FormSaved
         ]
@@ -362,6 +393,7 @@ navStyle activeRoute navRoute =
         [ Font.size 16
         , Font.underline
         , Font.bold
+        , alignRight
         ]
     else
         [ Font.size 16 ]
