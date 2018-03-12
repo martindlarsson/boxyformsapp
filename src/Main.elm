@@ -333,7 +333,14 @@ setRoute maybeRoute model =
                     ( { model | activePage = Home, activeRoute = Route.Home }, Cmd.none )
 
                 Just logedInUser ->
-                    ( { model | activePage = (Profile (ProfilePage.init logedInUser)), activeRoute = Route.Profile }, Cmd.none )
+                    let
+                        persistentUserState =
+                            validateUser <| Just logedInUser
+
+                        profilePageModel =
+                            ProfilePage.init logedInUser persistentUserState
+                    in
+                        ( { model | activePage = (Profile profilePageModel), activeRoute = Route.Profile }, Cmd.none )
 
         Just Route.NewForm ->
             case model.user of

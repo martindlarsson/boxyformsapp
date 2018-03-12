@@ -98,9 +98,10 @@ update msg model =
         case msg of
             SaveForm ->
                 let
-                    _ = Debug.log "SaveForm" "Button pressed"
+                    _ =
+                        Debug.log "SaveForm" "Button pressed"
                 in
-                ( model, saveForm (encodeForm model.form) )
+                    ( model, saveForm (encodeForm model.form) )
 
             UpdateFormMeta field ->
                 ( { model | form = updateFormMetadata oldForm field }, Cmd.none )
@@ -110,12 +111,13 @@ update msg model =
                     ( newQuestions, newControlHoverState ) =
                         updateQuestion oldForm.questions questionOperation model.controlHoverState
 
-                    newForm = { oldForm | questions = newQuestions }
+                    newForm =
+                        { oldForm | questions = newQuestions }
                 in
                     ( { model | form = newForm, controlHoverState = newControlHoverState }, Cmd.none )
-            
+
             UpdateFormId newFormId ->
-                ( { model | form = { oldForm | id = newFormId }}, Cmd.none )
+                ( { model | form = { oldForm | id = newFormId } }, Cmd.none )
 
 
 updateFormMetadata : Form -> Field -> Form
@@ -154,30 +156,34 @@ updateQuestion oldQuestions qOperation oldControlHoverState =
 
             UpdateQuestionText questionIdx newText ->
                 let
-                    updateQuestionText oldQuestion = 
+                    updateQuestionText oldQuestion =
                         { oldQuestion | questionText = newText }
 
-                    newQuestions = Form.updateQuestion oldQuestions questionIdx updateQuestionText
+                    newQuestions =
+                        Form.updateQuestion oldQuestions questionIdx updateQuestionText
                 in
                     ( newQuestions, oldControlHoverState )
 
             MoveQuestionUp questionIdx ->
                 let
-                    newQuestions = moveItem oldQuestions questionIdx MoveUp
+                    newQuestions =
+                        moveItem oldQuestions questionIdx MoveUp
                 in
                     ( newQuestions, oldControlHoverState )
 
             MoveQuestionDown questionIdx ->
                 let
-                    newQuestions = moveItem oldQuestions questionIdx MoveDown
+                    newQuestions =
+                        moveItem oldQuestions questionIdx MoveDown
                 in
-                    ( newQuestions , oldControlHoverState )
+                    ( newQuestions, oldControlHoverState )
 
             RemoveQuestion questionIdx ->
                 let
-                    newQuestions = removeItem oldQuestions questionIdx 
+                    newQuestions =
+                        removeItem oldQuestions questionIdx
                 in
-                    ( newQuestions , oldControlHoverState )
+                    ( newQuestions, oldControlHoverState )
 
             UpdateChoice questionIdx choiceOperation ->
                 let
@@ -192,15 +198,19 @@ updateQuestion oldQuestions qOperation oldControlHoverState =
                             case oldQuestion.questionType of
                                 ChoiceType choiceList ->
                                     let
-                                        newChoices = updateChoice questionIdx choiceList choiceOperation
+                                        newChoices =
+                                            updateChoice questionIdx choiceList choiceOperation
 
-                                        newQuestion = { oldQuestion | questionType = ChoiceType newChoices }
+                                        newQuestion =
+                                            { oldQuestion | questionType = ChoiceType newChoices }
 
-                                        replaceOldQuestion oldQuestion = newQuestion
+                                        replaceOldQuestion oldQuestion =
+                                            newQuestion
 
-                                        newQuestions = Form.updateQuestion oldQuestions questionIdx replaceOldQuestion
+                                        newQuestions =
+                                            Form.updateQuestion oldQuestions questionIdx replaceOldQuestion
                                     in
-                                        (newQuestions, oldControlHoverState )
+                                        ( newQuestions, oldControlHoverState )
 
                                 _ ->
                                     errorReturn
@@ -214,7 +224,6 @@ updateQuestion oldQuestions qOperation oldControlHoverState =
 
 updateChoice : QuestionIdx -> Reorderable Choice -> ChoiceOperation -> Reorderable Choice
 updateChoice questionIdx oldChoices choiceOp =
-    
     case choiceOp of
         AddChoice ->
             Util.addItem oldChoices emptyChoice
@@ -246,7 +255,7 @@ view model =
             [ spacing 20 ]
             [ formMetadataView model
             , questionsView model
-            , FormView.button "Spara" SaveForm [ height (px 40) ]
+            , FormView.button "Spara" SaveForm [ height (px 40) ] Enabled
             ]
 
 
@@ -286,10 +295,11 @@ formMetadataView model =
 questionsView : Model -> Element Msg
 questionsView model =
     let
-        keyedList = getIndexedList model.form.questions
+        keyedList =
+            getIndexedList model.form.questions
 
         questionViews =
-            List.map (\(index, question) -> (questionTuple model.controlHoverState question index model.device)) keyedList
+            List.map (\( index, question ) -> (questionTuple model.controlHoverState question index model.device)) keyedList
     in
         Element.map UpdateQuestion <|
             Element.column []
@@ -300,11 +310,11 @@ questionsView model =
 
 questionTuple : ControlHover -> Question -> Int -> Device -> Element QuestionOperation
 questionTuple hoverState question index device =
-                Element.column
-                    [ spacing 20, padding 10 ]
-                    [ questionView question index
-                    , addQuestionView hoverState (index + 1) device
-                    ]
+    Element.column
+        [ spacing 20, padding 10 ]
+        [ questionView question index
+        , addQuestionView hoverState (index + 1) device
+        ]
 
 
 addQuestionView : ControlHover -> ControlIndex -> Device -> Element QuestionOperation
@@ -340,6 +350,7 @@ addQuestionView hoverState index device =
             [ Font.size 40
             , Font.color Color.darkGray
             , Background.color Color.lightGray
+
             -- , spacing 20
             -- , padding 10
             , centerY
@@ -362,7 +373,8 @@ addQuestionButton icon titleText msg =
         , mouseOver [ Font.color Color.lightCharcoal ]
         , onClick msg
         , width (px 80)
-        , padding 10 ]
+        , padding 10
+        ]
         [ Element.el
             [ centerY, centerX ]
             --, Element.Attributes.toAttr (Html.Attributes.title titleText)
@@ -382,16 +394,16 @@ questionView question questionIndex =
         ( questionContent, labelText ) =
             case questionType of
                 TextType ->
-                    (textQuestion question questionIndex, "Textfråga")
+                    ( textQuestion question questionIndex, "Textfråga" )
 
                 InfoType ->
-                    (infoQuestion question questionIndex, "Informationstext")
+                    ( infoQuestion question questionIndex, "Informationstext" )
 
                 ChoiceType choices ->
-                    (choiceQuestion question questionIndex choices, "Flervalsfråga")
+                    ( choiceQuestion question questionIndex choices, "Flervalsfråga" )
 
                 YesNoType ->
-                    (yesNoQuestion question questionIndex, "Ja/Nej-fråga")
+                    ( yesNoQuestion question questionIndex, "Ja/Nej-fråga" )
     in
         Element.column
             [ Background.color Color.lightOrange
@@ -405,9 +417,10 @@ questionView question questionIndex =
                 }
             ]
             [ Element.row [ height (px 25) ]
-                [ Element.column [ centerY ] [ Element.el [ alignLeft, centerY, Font.size 18 ] ( Element.text labelText ) ]
-                , Element.column [ width (px 100), alignRight, centerY, spacing 5 ] [questionButtons questionIndex] ]
-            , Element.row [  ] [ questionContent ]
+                [ Element.column [ centerY ] [ Element.el [ alignLeft, centerY, Font.size 18 ] (Element.text labelText) ]
+                , Element.column [ width (px 100), alignRight, centerY, spacing 5 ] [ questionButtons questionIndex ]
+                ]
+            , Element.row [] [ questionContent ]
             ]
 
 
@@ -415,7 +428,8 @@ infoQuestion : Question -> QuestionIdx -> Element QuestionOperation
 infoQuestion question questionIdx =
     FormView.textInput
         Multiline
-        Nothing -- (Just "Informationstext")
+        Nothing
+        -- (Just "Informationstext")
         "Här kan du skriva en informativ text som hjälper användaren."
         question.questionText
         (UpdateQuestionText questionIdx)
@@ -426,7 +440,8 @@ textQuestion : Question -> QuestionIdx -> Element QuestionOperation
 textQuestion question questionIdx =
     FormView.textInput
         Multiline
-        Nothing --(Just "Textfråga")
+        Nothing
+        --(Just "Textfråga")
         "Frågetext"
         question.questionText
         (UpdateQuestionText questionIdx)
@@ -437,7 +452,8 @@ yesNoQuestion : Question -> QuestionIdx -> Element QuestionOperation
 yesNoQuestion question questionIdx =
     FormView.textInput
         Multiline
-        Nothing --(Just "Ja/Nej-fråga")
+        Nothing
+        --(Just "Ja/Nej-fråga")
         "Frågetext"
         question.questionText
         (UpdateQuestionText questionIdx)
@@ -447,22 +463,25 @@ yesNoQuestion question questionIdx =
 choiceQuestion : Question -> QuestionIdx -> Reorderable Choice -> Element QuestionOperation
 choiceQuestion question questionIdx choiceList =
     let
-        listLength = List.length <| Reorderable.toList choiceList
+        listLength =
+            List.length <| Reorderable.toList choiceList
 
         elementHeight =
             60 + listLength * 60
 
-        indexedList = getIndexedList choiceList
+        indexedList =
+            getIndexedList choiceList
     in
         Element.column [ spacing 5, Font.alignLeft ]
             [ FormView.textInput
                 Singleline
-                Nothing --(Just "Flervalsfråga")
+                Nothing
+                --(Just "Flervalsfråga")
                 "Frågetext"
                 question.questionText
                 (UpdateQuestionText questionIdx)
                 Enabled
-            , Element.row [ ] [ Element.el [ alignLeft ] (Element.text "Val" ) ]
+            , Element.row [] [ Element.el [ alignLeft ] (Element.text "Val") ]
             , Keyed.row
                 [ Background.color Color.white
                 , height (px elementHeight)
@@ -475,7 +494,7 @@ choiceQuestion question questionIdx choiceList =
                 [ ( "choices " ++ (toString questionIdx)
                   , (Element.column []
                         (List.append
-                            (List.map (\(idx,c) -> choiceView c idx questionIdx) indexedList)
+                            (List.map (\( idx, c ) -> choiceView c idx questionIdx) indexedList)
                             [ addQuestionButton FeatherIcons.plusCircle "Lägg till val" (UpdateChoice questionIdx AddChoice) ]
                         )
                     )

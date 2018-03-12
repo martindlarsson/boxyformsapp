@@ -52,5 +52,5 @@ view user =
         column [ spacing 20, padding 10 ]
             [ paragraph h1 [ text "Hej och välkommen till BoxyForms!" ]
             , paragraph [] [ text "Här kan du skapa formulär för t.ex. anmälan till ditt sportarrangemang eller ert bröllop. Börja med att skapa ett formulär genom att klicka på knappen nedan." ]
-            , Form.button buttonText NewFormMsg [ Element.height (px 40) ]
+            , Form.button buttonText NewFormMsg [ Element.height (px 40) ] Enabled
             ]

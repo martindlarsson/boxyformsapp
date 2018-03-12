@@ -5,6 +5,7 @@ import Element.Events exposing (..)
 import Element.Input as Input exposing (..)
 import Element.Background as Background
 import Element.Border as Border
+import Element.Keyed as Keyed
 import Color
 import BoxyStyle exposing (..)
 
@@ -26,7 +27,8 @@ infoBox infoString =
         , padding 10
         , Border.dashed
         , Border.color Color.white
-        , Border.width 4]
+        , Border.width 4
+        ]
         [ El.text infoString ]
 
 
@@ -78,10 +80,21 @@ textInput inputType fieldLabel placeholder textValue msg ability =
                     }
 
 
-button : String -> msg -> List (Attribute msg) -> Element msg
-button buttonText msg layout =
-    row (List.concat [ box, layout, [ onClick msg ] ])
-        [ El.el [ centerX, centerY ] (El.text buttonText) ]
+button : String -> msg -> List (Attribute msg) -> Ability -> Element msg
+button buttonText msg layout ability =
+    let
+        onClickEvent =
+            if (ability == Enabled) then
+                [ onClick msg ]
+            else
+                []
+
+        keyeIdent =
+            "button-" ++ (toString ability)
+    in
+        Keyed.row
+            (List.concat [ box (ability == Enabled), layout, onClickEvent ])
+            [ ( keyeIdent, El.el [ centerX, centerY ] (El.text buttonText) ) ]
 
 
 checkbox : String -> (Bool -> msg) -> Bool -> Element msg
