@@ -14,6 +14,7 @@ import Color
 import Element.Font as Font
 import Html exposing (..)
 import Data.User as User exposing (..)
+import Data.Form as Form exposing (..)
 import Page.Login as LoginPage exposing (view)
 import Page.Home as HomePage exposing (view, update, Msg)
 import Page.Profile as ProfilePage exposing (view, update, Msg(..))
@@ -24,8 +25,15 @@ type alias Model =
     { activePage : Page
     , activeRoute : Route
     , user : Maybe User
+    , userForms : List Form
+    , statusMessage : Maybe MessageType
     , device : Maybe Device -- size of the window classified
     }
+
+
+type MessageType
+    = InfoMessage String
+    | ErrorMessage String
 
 
 type Page
@@ -42,6 +50,8 @@ init val location =
     ( { activePage = Home
       , activeRoute = Route.Home
       , user = Nothing
+      , userForms = []
+      , statusMessage = Nothing
       , device = Nothing
       }
     , Task.perform WindowResize Window.size
@@ -64,6 +74,14 @@ view model =
                 [ El.width (px 600), centerX, paddingXY 0 20 ]
             else
                 [ El.width (px 800), centerX, paddingXY 0 20 ]
+
+        message =
+            case model.statusMessage of
+                Nothing ->
+                    El.empty
+
+                Just messageType ->
+                    showMessage messageType
     in
         El.layout
             [ Font.family [ Font.sansSerif, Font.typeface "Open Sans" ]
@@ -85,11 +103,47 @@ view model =
                         }
                     ]
                     [ navigation model ]
+                , message
                 , El.row
                     --El.height <| px (device.height - 80)
                     pageLayout
                     [ (viewPage page model) ]
                 ]
+
+
+showMessage : MessageType -> Element msg
+showMessage messageType =
+    let
+        ( fontColor, borderColor ) =
+            case messageType of
+                InfoMessage m ->
+                    ( Color.black, Color.white )
+
+                ErrorMessage m ->
+                    ( Color.red, Color.red )
+
+        message =
+            case messageType of
+                InfoMessage m ->
+                    m
+
+                ErrorMessage m ->
+                    m
+    in
+        El.row
+            [ El.height (px 60)
+            , Background.color Color.darkGray
+            , Border.dashed
+            , Border.color Color.white
+            , Border.width 4
+            , Font.color fontColor
+            ]
+            [ El.paragraph
+                [ El.centerX
+                , El.centerY
+                ]
+                [ El.text message ]
+            ]
 
 
 navigation : Model -> Element msg
@@ -175,6 +229,7 @@ type Msg
     | HomePageMsg HomePage.Msg
     | NewFormPageMsg NewFormPage.Msg
     | FormSaved String
+    | GotForms Value
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -267,8 +322,11 @@ update msg model =
                             let
                                 ( newPageModel, cmd ) =
                                     ProfilePage.update (ProfilePage.UserSaved newUser) oldPageModel
+
+                                infoMessage =
+                                    InfoMessage "Uppgifterna är sparade! :)"
                             in
-                                ( { model | activePage = Profile newPageModel, user = loggedInUser }, cmd )
+                                ( { model | activePage = Profile newPageModel, user = loggedInUser, statusMessage = Just infoMessage }, cmd )
 
                         _ ->
                             ( { model | user = loggedInUser }, Cmd.none )
@@ -303,6 +361,24 @@ update msg model =
                     _ ->
                         ( model, Cmd.none )
 
+            ( GotForms formsObject, _ ) ->
+                let
+                    formsResult =
+                        Form.decodeForms formsObject
+
+                    _ =
+                        Debug.log "GotForms!!" formsResult
+
+                    ( forms, errorMessage ) =
+                        case formsResult of
+                            Ok forms ->
+                                ( forms, Nothing )
+
+                            Err str ->
+                                ( [], Just <| ErrorMessage str )
+                in
+                    ( { model | userForms = forms, statusMessage = errorMessage }, Cmd.none )
+
             ( _, _ ) ->
                 -- Throw away any stray messages
                 ( model, Cmd.none )
@@ -315,7 +391,16 @@ setRoute maybeRoute model =
             ( { model | activePage = NotFound, activeRoute = Route.Home }, Cmd.none )
 
         Just Route.Home ->
-            ( { model | activePage = Home, activeRoute = Route.Home }, Cmd.none )
+            let
+                cmd =
+                    case model.user of
+                        Nothing ->
+                            Cmd.none
+
+                        Just user ->
+                            getMyForms user.id
+            in
+                ( { model | activePage = Home, activeRoute = Route.Home }, cmd )
 
         Just Route.Login ->
             ( { model | activePage = Login, activeRoute = Route.Login }, Ports.startAuthUI () )
@@ -373,6 +458,7 @@ subscriptions model =
         , Ports.userSaved UserSaved
         , Window.resizes (\wSize -> WindowResize wSize)
         , Ports.formSaved FormSaved
+        , Ports.gotForms GotForms
         ]
 
 

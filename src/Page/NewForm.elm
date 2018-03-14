@@ -350,9 +350,6 @@ addQuestionView hoverState index device =
             [ Font.size 40
             , Font.color Color.darkGray
             , Background.color Color.lightGray
-
-            -- , spacing 20
-            -- , padding 10
             , centerY
             , centerX
             , width (px 350)
@@ -429,7 +426,6 @@ infoQuestion question questionIdx =
     FormView.textInput
         Multiline
         Nothing
-        -- (Just "Informationstext")
         "Här kan du skriva en informativ text som hjälper användaren."
         question.questionText
         (UpdateQuestionText questionIdx)
@@ -441,7 +437,6 @@ textQuestion question questionIdx =
     FormView.textInput
         Multiline
         Nothing
-        --(Just "Textfråga")
         "Frågetext"
         question.questionText
         (UpdateQuestionText questionIdx)
@@ -453,7 +448,6 @@ yesNoQuestion question questionIdx =
     FormView.textInput
         Multiline
         Nothing
-        --(Just "Ja/Nej-fråga")
         "Frågetext"
         question.questionText
         (UpdateQuestionText questionIdx)
@@ -476,7 +470,6 @@ choiceQuestion question questionIdx choiceList =
             [ FormView.textInput
                 Singleline
                 Nothing
-                --(Just "Flervalsfråga")
                 "Frågetext"
                 question.questionText
                 (UpdateQuestionText questionIdx)

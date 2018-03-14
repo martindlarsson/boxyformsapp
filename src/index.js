@@ -103,11 +103,13 @@ app.ports.getPublicForms.subscribe(() => {
     db.collection("forms").where("public", "==", true)
     .get()
     .then(function(querySnapshot) {
+        var forms = [];
         querySnapshot.forEach(function(doc) {
             console.log(doc.id, " => ", doc.data());
+            forms.push(doc.data());
         });
 
-        app.ports.gotForms.send(querySnapshot);
+        app.ports.gotForms.send(forms);
     })
     .catch(function(error) {
         console.log("Error getting documents: ", error);
@@ -115,14 +117,16 @@ app.ports.getPublicForms.subscribe(() => {
 });
 
 app.ports.getMyForms.subscribe((userId) => {
-    db.collection("forms").where("public", "==", true)
+    db.collection("forms").where("userId", "==", userId)
     .get()
     .then(function(querySnapshot) {
+        var forms = [];
         querySnapshot.forEach(function(doc) {
             console.log(doc.id, " => ", doc.data());
+            forms.push(doc.data());
         });
 
-        app.ports.gotForms.send(querySnapshot);
+        app.ports.gotForms.send(forms);
     })
     .catch(function(error) {
         console.log("Error getting documents: ", error);
