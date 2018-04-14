@@ -18,7 +18,7 @@ import Data.Form as Form exposing (..)
 import Page.Login as LoginPage exposing (view)
 import Page.Home as HomePage exposing (view, update, Msg)
 import Page.Profile as ProfilePage exposing (view, update, Msg(..))
-import Page.NewForm as NewFormPage exposing (view, update, Msg)
+import Page.NewForm as NewFormPage exposing (view, update, Msg, MsgForParent(..))
 
 
 type alias Model =
@@ -38,7 +38,7 @@ type MessageType
 
 type Page
     = NotFound
-    | Home
+    | Home HomePage.Model
     | NewForm NewFormPage.Model
     | MyForms
     | Login
@@ -47,7 +47,7 @@ type Page
 
 init : Value -> Location -> ( Model, Cmd Msg )
 init val location =
-    ( { activePage = Home
+    ( { activePage = Home HomePage.emptyModel
       , activeRoute = Route.Home
       , user = Nothing
       , userForms = []
@@ -198,8 +198,8 @@ viewPage page model =
         NotFound ->
             El.text "Sidan inte funnen"
 
-        Home ->
-            El.map HomePageMsg (HomePage.view model.user)
+        Home pageModel ->
+            El.map HomePageMsg (HomePage.view pageModel)
 
         MyForms ->
             El.text "Mina formulär"
@@ -300,7 +300,7 @@ update msg model =
             ( UserLoggedOut, _ ) ->
                 let
                     updatedModel =
-                        { model | user = Nothing }
+                        { model | user = Nothing, userForms = [] }
                 in
                     setRoute (Just Route.Home) updatedModel
 
@@ -343,17 +343,25 @@ update msg model =
 
             ( NewFormPageMsg subMsg, NewForm subModel ) ->
                 let
-                    ( newFormPageModel, cmd ) =
+                    ( ( newFormPageModel, cmd ), msgFromPage ) =
                         NewFormPage.update subMsg subModel
+
+                    updatedForms =
+                        case msgFromPage of
+                            AddNewForm form ->
+                                List.append model.userForms [ form ]
+
+                            NoMsg ->
+                                model.userForms
                 in
-                    ( { model | activePage = NewForm newFormPageModel }, Cmd.map NewFormPageMsg cmd )
+                    ( { model | activePage = NewForm newFormPageModel, userForms = updatedForms }, Cmd.map NewFormPageMsg cmd )
 
             -- Ett formulär har sparats, nytt id returneras
             ( FormSaved formId, _ ) ->
                 case model.activePage of
                     NewForm pageModel ->
                         let
-                            ( newFormPageModel, cmd ) =
+                            ( ( newFormPageModel, cmd ), msgFromPage ) =
                                 NewFormPage.update (NewFormPage.UpdateFormId formId) pageModel
                         in
                             ( { model | activePage = NewForm newFormPageModel }, Cmd.map NewFormPageMsg cmd )
@@ -361,13 +369,10 @@ update msg model =
                     _ ->
                         ( model, Cmd.none )
 
-            ( GotForms formsObject, _ ) ->
+            ( GotForms formsObject, activePage ) ->
                 let
                     formsResult =
                         Form.decodeForms formsObject
-
-                    _ =
-                        Debug.log "GotForms!!" formsResult
 
                     ( forms, errorMessage ) =
                         case formsResult of
@@ -376,8 +381,16 @@ update msg model =
 
                             Err str ->
                                 ( [], Just <| ErrorMessage str )
+
+                    newActivePage =
+                        case activePage of
+                            Home pageModel ->
+                                Home { pageModel | forms = forms }
+
+                            page ->
+                                page
                 in
-                    ( { model | userForms = forms, statusMessage = errorMessage }, Cmd.none )
+                    ( { model | userForms = forms, statusMessage = errorMessage, activePage = newActivePage }, Cmd.none )
 
             ( _, _ ) ->
                 -- Throw away any stray messages
@@ -399,14 +412,17 @@ setRoute maybeRoute model =
 
                         Just user ->
                             getMyForms user.id
+
+                pageModel =
+                    HomePage.init model.user model.userForms
             in
-                ( { model | activePage = Home, activeRoute = Route.Home }, cmd )
+                ( { model | activePage = Home pageModel, activeRoute = Route.Home }, cmd )
 
         Just Route.Login ->
             ( { model | activePage = Login, activeRoute = Route.Login }, Ports.startAuthUI () )
 
         Just Route.Logout ->
-            ( { model | activePage = Home, activeRoute = Route.Home }, Ports.logOut () )
+            ( { model | activePage = Home HomePage.emptyModel, activeRoute = Route.Home }, Ports.logOut () )
 
         Just Route.MyForms ->
             ( { model | activePage = MyForms, activeRoute = Route.MyForms }, Cmd.none )
@@ -415,7 +431,7 @@ setRoute maybeRoute model =
             case model.user of
                 Nothing ->
                     -- TODO set error message!!
-                    ( { model | activePage = Home, activeRoute = Route.Home }, Cmd.none )
+                    ( { model | activePage = Home HomePage.emptyModel, activeRoute = Route.Home }, Cmd.none )
 
                 Just logedInUser ->
                     let
@@ -431,7 +447,7 @@ setRoute maybeRoute model =
             case model.user of
                 Nothing ->
                     -- TODO set error message!!
-                    ( { model | activePage = Home, activeRoute = Route.Home }, Cmd.none )
+                    ( { model | activePage = Home HomePage.emptyModel, activeRoute = Route.Home }, Cmd.none )
 
                 Just logedInUser ->
                     let
@@ -516,7 +532,7 @@ pageToString page =
         NotFound ->
             "Notfound"
 
-        Home ->
+        Home model ->
             "Hem"
 
         NewForm model ->

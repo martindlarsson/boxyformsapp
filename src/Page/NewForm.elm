@@ -27,6 +27,11 @@ type Msg
     | UpdateFormId FormId
 
 
+type MsgForParent
+    = NoMsg
+    | AddNewForm Form
+
+
 type QuestionOperation
     = AddQuestion QuestionType ControlIndex
     | UpdateQuestionText QuestionIdx String
@@ -89,7 +94,7 @@ init user device =
     }
 
 
-update : Msg -> Model -> ( Model, Cmd Msg )
+update : Msg -> Model -> ( ( Model, Cmd Msg ), MsgForParent )
 update msg model =
     let
         oldForm =
@@ -101,10 +106,10 @@ update msg model =
                     _ =
                         Debug.log "SaveForm" "Button pressed"
                 in
-                    ( model, saveForm (encodeForm model.form) )
+                    ( ( model, saveForm (encodeForm model.form) ), AddNewForm model.form )
 
             UpdateFormMeta field ->
-                ( { model | form = updateFormMetadata oldForm field }, Cmd.none )
+                ( ( { model | form = updateFormMetadata oldForm field }, Cmd.none ), NoMsg )
 
             UpdateQuestion questionOperation ->
                 let
@@ -114,10 +119,10 @@ update msg model =
                     newForm =
                         { oldForm | questions = newQuestions }
                 in
-                    ( { model | form = newForm, controlHoverState = newControlHoverState }, Cmd.none )
+                    ( ( { model | form = newForm, controlHoverState = newControlHoverState }, Cmd.none ), NoMsg )
 
             UpdateFormId newFormId ->
-                ( { model | form = { oldForm | id = newFormId } }, Cmd.none )
+                ( ( { model | form = { oldForm | id = newFormId } }, Cmd.none ), NoMsg )
 
 
 updateFormMetadata : Form -> Field -> Form

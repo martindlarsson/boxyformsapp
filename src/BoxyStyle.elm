@@ -39,3 +39,8 @@ box enabled =
 h1 : List (Attribute msg)
 h1 =
     [ Font.size 20 ]
+
+
+h2 : List (Attribute msg)
+h2 =
+    [ Font.size 16 ]

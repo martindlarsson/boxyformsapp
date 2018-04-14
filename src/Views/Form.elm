@@ -105,3 +105,8 @@ checkbox labelText msg value =
         , checked = value
         , label = Input.labelRight [] (El.text labelText)
         }
+
+
+verticalSpacing : Int -> Element msg
+verticalSpacing height =
+    el [ El.height (px height) ] El.empty

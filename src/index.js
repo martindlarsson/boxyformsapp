@@ -105,7 +105,7 @@ app.ports.getPublicForms.subscribe(() => {
     .then(function(querySnapshot) {
         var forms = [];
         querySnapshot.forEach(function(doc) {
-            console.log(doc.id, " => ", doc.data());
+            // console.log(doc.id, " => ", doc.data());
             forms.push(doc.data());
         });
 
@@ -122,7 +122,7 @@ app.ports.getMyForms.subscribe((userId) => {
     .then(function(querySnapshot) {
         var forms = [];
         querySnapshot.forEach(function(doc) {
-            console.log(doc.id, " => ", doc.data());
+            // console.log(doc.id, " => ", doc.data());
             forms.push(doc.data());
         });
 
