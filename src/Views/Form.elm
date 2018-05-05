@@ -59,7 +59,7 @@ textInput inputType fieldLabel placeholder textValue msg ability =
                     Input.labelAbove [] (El.text fLabel)
 
                 Nothing ->
-                    Input.labelAbove [] (El.empty)
+                    Input.labelAbove [] (El.none)
     in
         case inputType of
             Multiline ->
@@ -109,4 +109,4 @@ checkbox labelText msg value =
 
 verticalSpacing : Int -> Element msg
 verticalSpacing height =
-    el [ El.height (px height) ] El.empty
+    el [ El.height (px height) ] El.none

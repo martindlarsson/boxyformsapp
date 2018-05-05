@@ -15,6 +15,9 @@ import FeatherIcons
 import Util exposing (..)
 import Reorderable exposing (Reorderable)
 import Ports exposing (saveForm)
+import Random.String exposing (string)
+import Random.Char exposing (english)
+import Random exposing (generate)
 
 
 -- Msg --
@@ -22,9 +25,10 @@ import Ports exposing (saveForm)
 
 type Msg
     = SaveForm
+    | FormSaved
+    | UpdateFormId String
     | UpdateFormMeta Field
     | UpdateQuestion QuestionOperation
-    | UpdateFormId FormId
 
 
 type MsgForParent
@@ -85,13 +89,47 @@ type alias ChoiceIndex =
     Int
 
 
-init : User -> Device -> Model
-init user device =
-    { userState = validateUser (Just user)
-    , form = emptyForm user
-    , controlHoverState = NoControl
-    , device = device
-    }
+stringGenerator : Random.Generator String
+stringGenerator =
+    string 10 Random.Char.english
+
+
+init : User -> Device -> Maybe Form -> ( Model, Cmd Msg )
+init user device maybeForm =
+    let
+        _ =
+            Debug.log "initForm" (toString maybeForm)
+
+        form =
+            case maybeForm of
+                Nothing ->
+                    emptyForm user
+
+                Just formToEdit ->
+                    formToEdit
+
+        cmd =
+            case maybeForm of
+                Nothing ->
+                    Random.generate UpdateFormId stringGenerator
+
+                _ ->
+                    Cmd.none
+
+        -- if (maybeForm === Nothing) then
+        --     Cmd.none
+        -- else
+        --     Random.generate UpdateFormId stringGenerator
+        _ =
+            Debug.log "initForm cmd" (toString cmd)
+    in
+        ( { userState = validateUser (Just user)
+          , form = form
+          , controlHoverState = NoControl
+          , device = device
+          }
+        , cmd
+        )
 
 
 update : Msg -> Model -> ( ( Model, Cmd Msg ), MsgForParent )
@@ -102,11 +140,16 @@ update msg model =
     in
         case msg of
             SaveForm ->
+                -- TODO, Cmd AddNewForm model.form ska bara köras en gång
+                ( ( model, saveForm (encodeForm model.form) ), AddNewForm model.form )
+
+            FormSaved ->
+                -- TODO, ge feedback till användaren att formuläret sparades
                 let
                     _ =
-                        Debug.log "SaveForm" "Button pressed"
+                        Debug.log "newForm update" "FormSaved"
                 in
-                    ( ( model, saveForm (encodeForm model.form) ), AddNewForm model.form )
+                    ( ( model, Cmd.none ), NoMsg )
 
             UpdateFormMeta field ->
                 ( ( { model | form = updateFormMetadata oldForm field }, Cmd.none ), NoMsg )
@@ -276,10 +319,10 @@ formMetadataView model =
         userForm =
             case (userState) of
                 UserIsOK ->
-                    Element.empty
+                    Element.none
 
                 NotLoggedIn ->
-                    Element.empty
+                    Element.none
 
                 UserNeedsMoreInfo ->
                     FormView.infoBox "Jag vill be dig fylla i detta formulär innan du går vidare och skapar dina egna formulär. Om du inte tillhör en organisation kan du fylla i ditt namn under visningsnamn. Jag använder visningsnamn i dina formulär som författaren av formuläret."

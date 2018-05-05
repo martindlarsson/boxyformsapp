@@ -4,7 +4,10 @@ import Json.Decode as JD exposing (..)
 import Json.Decode.Pipeline exposing (..)
 import Json.Encode as JE exposing (..)
 import Data.User exposing (..)
-import Reorderable exposing (Reorderable)
+import Reorderable as R exposing (Reorderable)
+
+
+-- import UrlParser
 
 
 type alias FormId =
@@ -12,7 +15,7 @@ type alias FormId =
 
 
 type alias Form =
-    { id : FormId
+    { id : String
     , name : String
     , description : String
     , dateFrom : String
@@ -28,6 +31,7 @@ type alias Form =
 type alias Question =
     { questionText : String
     , questionType : QuestionType
+    , required : Bool
     }
 
 
@@ -62,7 +66,7 @@ emptyForm user =
     , imgUrl = ""
     , orgName = Maybe.withDefault "" user.orgName
     , userId = user.id
-    , questions = Reorderable.empty
+    , questions = R.empty
     }
 
 
@@ -70,6 +74,7 @@ emptyQuestion : QuestionType -> Question
 emptyQuestion qType =
     { questionText = ""
     , questionType = qType
+    , required = False
     }
 
 
@@ -80,6 +85,22 @@ emptyChoice =
 
 
 
+-- Url parsers
+-- formIdToString : Form -> String
+-- formIdToString form =
+--     let
+--         (FormId formId) =
+--             form.id
+--     in
+--         formId
+-- formIdParser : Form -> UrlParser.Parser (FormId -> a) a
+-- formIdParser form =
+--     -- let
+--     --     -- parseFormId = \form = formIdToString form
+--     --     formIdResult = (\form -> Ok <| formIdToString form.id)
+--     -- in
+--     UrlParser.custom "FORMID" (\form -> Ok <| formIdToString form.id)
+--(Ok << parseFormId)
 -- Encoder
 
 
@@ -99,9 +120,15 @@ encodeForm form =
         ]
 
 
+
+-- encodeFormId : FormId -> JE.Value
+-- encodeFormId (FormId formId) =
+--     JE.string formId
+
+
 encodeQuestions : Reorderable Question -> List JE.Value
 encodeQuestions questions =
-    List.map encodeQuestion (Reorderable.toList questions)
+    List.map encodeQuestion (R.toList questions)
 
 
 encodeQuestion : Question -> JE.Value
@@ -130,7 +157,7 @@ encodeQuestionType questionType =
 
 encodeChoices : Reorderable Choice -> List JE.Value
 encodeChoices choices =
-    List.map encodeChoice (Reorderable.toList choices)
+    List.map encodeChoice (R.toList choices)
 
 
 encodeChoice : Choice -> JE.Value
@@ -144,7 +171,7 @@ encodeChoice choice =
 
 reorderable : Decoder a -> Decoder (Reorderable a)
 reorderable decoder =
-    JD.list decoder |> JD.map Reorderable.fromList
+    JD.list decoder |> JD.map R.fromList
 
 
 decodeForm : JD.Value -> Result String Form
@@ -172,11 +199,18 @@ formDecoder =
         |> required "questions" (reorderable questionDecoder)
 
 
+
+-- formIdDecoder : Decoder FormId
+-- formIdDecoder =
+--     JD.map FormId JD.string
+
+
 questionDecoder : Decoder Question
 questionDecoder =
     decode Question
         |> required "questionText" JD.string
         |> required "questionType" questionTypeDecoder
+        |> required "required" JD.bool
 
 
 questionTypeDecoder : Decoder QuestionType
@@ -221,16 +255,59 @@ choiceDecoder =
 getIndexedList : Reorderable a -> List ( Int, a )
 getIndexedList oldList =
     List.indexedMap (,) <|
-        Reorderable.toList oldList
+        R.toList oldList
 
 
 getItem : Reorderable a -> Int -> Maybe a
 getItem oldList index =
-    Reorderable.get index oldList
+    R.get index oldList
+
+
+getListItem : List Form -> FormId -> Maybe Form
+getListItem forms formId =
+    List.head <| List.filter (\form -> form.id == formId) forms
 
 
 
 -- Update --
+
+
+updateListItem : List Form -> FormId -> Form -> List Form
+updateListItem oldList newFormId newForm =
+    let
+        _ =
+            Debug.log "updateListItem" newFormId
+
+        reorderableList =
+            R.fromList oldList
+
+        keyedList =
+            R.toKeyedList reorderableList
+
+        maybeKeyedItem =
+            List.filter (\( key, form ) -> form.id == newFormId) keyedList |> List.head
+    in
+        case maybeKeyedItem of
+            Nothing ->
+                List.append oldList [ newForm ]
+
+            Just ( key, oldForm ) ->
+                let
+                    keyResult =
+                        String.toInt key
+                in
+                    case keyResult of
+                        Ok key ->
+                            R.update key (\_ -> newForm) reorderableList |> R.toList
+
+                        Err msg ->
+                            oldList
+
+
+
+-- let
+--     updateForm // TODO, gör en funktion som byter ut ett befintlig formulär mot ett nytt
+-- in
 
 
 updateChoice : Reorderable Choice -> Int -> String -> Reorderable Choice
@@ -239,7 +316,7 @@ updateChoice oldChoices index newValue =
         updateField oldChoice =
             { oldChoice | choiceText = newValue }
     in
-        Reorderable.update index updateField oldChoices
+        R.update index updateField oldChoices
 
 
 addQuestion : Reorderable Question -> QuestionType -> Int -> Reorderable Question
@@ -248,12 +325,12 @@ addQuestion oldQuestions qType index =
         questionToInsert =
             emptyQuestion qType
     in
-        Reorderable.insertAt index questionToInsert oldQuestions
+        R.insertAt index questionToInsert oldQuestions
 
 
 updateQuestion : Reorderable Question -> Int -> (Question -> Question) -> Reorderable Question
 updateQuestion oldQuestions index newQuestionFunc =
-    Reorderable.update index newQuestionFunc oldQuestions
+    R.update index newQuestionFunc oldQuestions
 
 
 updateFormWithQuestion : Form -> Int -> Question -> Form

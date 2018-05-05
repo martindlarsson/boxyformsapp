@@ -1,9 +1,8 @@
-module Route exposing (Route(..), fromLocation, href, modifyUrl, routeToString)
+module Route exposing (Route(..), fromLocation, routeToString, modifyUrl)
 
-import Html exposing (Attribute)
-import Html.Attributes as Attr
 import Navigation exposing (Location)
 import UrlParser as Url exposing ((</>), Parser, oneOf, parseHash, s, string)
+import Data.Form exposing (..)
 
 
 -- ROUTING --
@@ -13,9 +12,9 @@ type Route
     = Home
     | Login
     | Logout
-    | MyForms
     | Profile
     | NewForm
+    | EditForm FormId
 
 
 
@@ -29,8 +28,8 @@ route =
         [ Url.map Home (s "")
         , Url.map Login (s "login")
         , Url.map Logout (s "logout")
-        , Url.map MyForms (s "myforms")
         , Url.map NewForm (s "newform")
+        , Url.map EditForm (s "editform" </> string)
         , Url.map Profile (s "profile")
         ]
 
@@ -53,11 +52,11 @@ routeToString page =
                 Logout ->
                     [ "logout" ]
 
-                MyForms ->
-                    [ "myforms" ]
-
                 NewForm ->
                     [ "newform" ]
+
+                EditForm formId ->
+                    [ "editform", formId ]
 
                 Profile ->
                     [ "profile" ]
@@ -67,11 +66,6 @@ routeToString page =
 
 
 -- PUBLIC HELPERS --
-
-
-href : Route -> Attribute msg
-href route =
-    Attr.href (routeToString route)
 
 
 modifyUrl : Route -> Cmd msg

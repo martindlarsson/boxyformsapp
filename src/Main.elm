@@ -16,7 +16,7 @@ import Html exposing (..)
 import Data.User as User exposing (..)
 import Data.Form as Form exposing (..)
 import Page.Login as LoginPage exposing (view)
-import Page.Home as HomePage exposing (view, update, Msg)
+import Page.Home as HomePage exposing (view, update, MsgForParent(..))
 import Page.Profile as ProfilePage exposing (view, update, Msg(..))
 import Page.NewForm as NewFormPage exposing (view, update, Msg, MsgForParent(..))
 
@@ -40,7 +40,6 @@ type Page
     = NotFound
     | Home HomePage.Model
     | NewForm NewFormPage.Model
-    | MyForms
     | Login
     | Profile ProfilePage.Model
 
@@ -78,7 +77,7 @@ view model =
         message =
             case model.statusMessage of
                 Nothing ->
-                    El.empty
+                    El.none
 
                 Just messageType ->
                     showMessage messageType
@@ -161,9 +160,9 @@ navigation model =
                 { url = (routeToString Route.Home)
                 , label = (El.el [ Font.size 25 ] (El.text "BoxyForms"))
                 }
-            , El.row [ El.width fill ] [ El.empty ]
+            , El.row [ El.width fill ] [ El.none ]
             , El.row
-                [ spacing 20, alignRight ]
+                [ spacing 20 ]
                 (signInLink model)
             ]
 
@@ -179,16 +178,18 @@ signInLink model =
 
         userState =
             validateUser user
+
+        alignR =
+            [ alignRight ]
     in
         if (user == Nothing) then
-            [ link [] { url = (routeToString Route.Login), label = (El.el (navStyle activeRoute Route.Login) (El.text "Logga in")) } ]
+            [ link alignR { url = (routeToString Route.Login), label = (El.el (navStyle activeRoute Route.Login) (El.text "Logga in")) } ]
         else if (userState == UserNeedsMoreInfo) then
-            [ link [] { url = (routeToString Route.Logout), label = (El.el [ Font.size 16 ] (El.text "Logga ut")) } ]
+            [ link alignR { url = (routeToString Route.Logout), label = (El.el [ Font.size 16 ] (El.text "Logga ut")) } ]
         else
-            [ link [] { url = (routeToString Route.NewForm), label = (El.el (navStyle activeRoute Route.NewForm) (El.text "Nytt formulär")) }
-            , link [] { url = (routeToString Route.MyForms), label = (El.el (navStyle activeRoute Route.MyForms) (El.text "Mina formulär")) }
-            , link [] { url = (routeToString Route.Profile), label = (El.el (navStyle activeRoute Route.Profile) (El.text "Min profil")) }
-            , link [] { url = (routeToString Route.Logout), label = (El.el [ Font.size 16 ] (El.text "Logga ut")) }
+            [ --link [] { url = (routeToString Route.NewForm), label = (El.el (navStyle activeRoute Route.NewForm) (El.text "Nytt formulär")) }
+              link alignR { url = (routeToString Route.Profile), label = (El.el (navStyle activeRoute Route.Profile) (El.text "Min profil")) }
+            , link alignR { url = (routeToString Route.Logout), label = (El.el [ Font.size 16 ] (El.text "Logga ut")) }
             ]
 
 
@@ -200,9 +201,6 @@ viewPage page model =
 
         Home pageModel ->
             El.map HomePageMsg (HomePage.view pageModel)
-
-        MyForms ->
-            El.text "Mina formulär"
 
         NewForm pageModel ->
             Keyed.row [] [ ( "new_form", (El.map NewFormPageMsg (NewFormPage.view pageModel)) ) ]
@@ -226,7 +224,7 @@ type Msg
     | UserLoggedOut
     | UserSaved Value
     | ProfilePageMsg ProfilePage.Msg
-    | HomePageMsg HomePage.Msg
+    | HomePageMsg HomePage.MsgForParent
     | NewFormPageMsg NewFormPage.Msg
     | FormSaved String
     | GotForms Value
@@ -339,7 +337,19 @@ update msg model =
                     ( { model | activePage = Profile pageModel }, cmd )
 
             ( HomePageMsg subMsg, _ ) ->
-                update (SetRoute (Just Route.NewForm)) model
+                let
+                    ( cmd, msgFromPage ) =
+                        HomePage.update subMsg
+                in
+                    case msgFromPage of
+                        HomePage.EditForm form ->
+                            update (SetRoute (Just <| Route.EditForm form.id)) model
+
+                        HomePage.DeleteForm form ->
+                            update (SetRoute (Just <| Route.EditForm form.id)) model
+
+                        HomePage.NewForm ->
+                            update (SetRoute (Just Route.NewForm)) model
 
             ( NewFormPageMsg subMsg, NewForm subModel ) ->
                 let
@@ -348,23 +358,27 @@ update msg model =
 
                     updatedForms =
                         case msgFromPage of
-                            AddNewForm form ->
-                                List.append model.userForms [ form ]
+                            NewFormPage.AddNewForm form ->
+                                -- Add new form or update the old
+                                updateListItem model.userForms form.id form
 
-                            NoMsg ->
+                            NewFormPage.NoMsg ->
                                 model.userForms
                 in
                     ( { model | activePage = NewForm newFormPageModel, userForms = updatedForms }, Cmd.map NewFormPageMsg cmd )
 
-            -- Ett formulär har sparats, nytt id returneras
+            -- Ett formulär har sparats
             ( FormSaved formId, _ ) ->
                 case model.activePage of
                     NewForm pageModel ->
                         let
                             ( ( newFormPageModel, cmd ), msgFromPage ) =
-                                NewFormPage.update (NewFormPage.UpdateFormId formId) pageModel
+                                NewFormPage.update NewFormPage.FormSaved pageModel
+
+                            infoMessage =
+                                InfoMessage "Formuläret sparades"
                         in
-                            ( { model | activePage = NewForm newFormPageModel }, Cmd.map NewFormPageMsg cmd )
+                            ( { model | activePage = NewForm newFormPageModel, statusMessage = Just infoMessage }, Cmd.map NewFormPageMsg cmd )
 
                     _ ->
                         ( model, Cmd.none )
@@ -399,67 +413,73 @@ update msg model =
 
 setRoute : Maybe Route -> Model -> ( Model, Cmd Msg )
 setRoute maybeRoute model =
-    case maybeRoute of
-        Nothing ->
-            ( { model | activePage = NotFound, activeRoute = Route.Home }, Cmd.none )
-
-        Just Route.Home ->
-            let
-                cmd =
-                    case model.user of
-                        Nothing ->
-                            Cmd.none
-
-                        Just user ->
-                            getMyForms user.id
-
-                pageModel =
-                    HomePage.init model.user model.userForms
-            in
-                ( { model | activePage = Home pageModel, activeRoute = Route.Home }, cmd )
-
-        Just Route.Login ->
-            ( { model | activePage = Login, activeRoute = Route.Login }, Ports.startAuthUI () )
-
-        Just Route.Logout ->
-            ( { model | activePage = Home HomePage.emptyModel, activeRoute = Route.Home }, Ports.logOut () )
-
-        Just Route.MyForms ->
-            ( { model | activePage = MyForms, activeRoute = Route.MyForms }, Cmd.none )
-
-        Just Route.Profile ->
-            case model.user of
+    let
+        device =
+            case model.device of
                 Nothing ->
-                    -- TODO set error message!!
-                    ( { model | activePage = Home HomePage.emptyModel, activeRoute = Route.Home }, Cmd.none )
+                    initialDevice
 
-                Just logedInUser ->
-                    let
-                        persistentUserState =
-                            validateUser <| Just logedInUser
+                Just currentDevice ->
+                    currentDevice
+    in
+        case model.user of
+            Nothing ->
+                -- TODO set error message!!
+                ( { model | activePage = Home HomePage.emptyModel, activeRoute = Route.Home }, Cmd.none )
 
-                        profilePageModel =
-                            ProfilePage.init logedInUser persistentUserState
-                    in
-                        ( { model | activePage = (Profile profilePageModel), activeRoute = Route.Profile }, Cmd.none )
+            Just logedInUser ->
+                case maybeRoute of
+                    Nothing ->
+                        ( { model | activePage = NotFound, activeRoute = Route.Home }, Cmd.none )
 
-        Just Route.NewForm ->
-            case model.user of
-                Nothing ->
-                    -- TODO set error message!!
-                    ( { model | activePage = Home HomePage.emptyModel, activeRoute = Route.Home }, Cmd.none )
+                    Just Route.Home ->
+                        let
+                            cmd =
+                                case model.user of
+                                    Nothing ->
+                                        Cmd.none
 
-                Just logedInUser ->
-                    let
-                        device =
-                            case model.device of
-                                Nothing ->
-                                    initialDevice
+                                    Just user ->
+                                        getMyForms user.id
 
-                                Just currentDevice ->
-                                    currentDevice
-                    in
-                        ( { model | activePage = (NewForm (NewFormPage.init logedInUser device)), activeRoute = Route.NewForm }, Cmd.none )
+                            pageModel =
+                                HomePage.init model.user model.userForms
+                        in
+                            ( { model | activePage = Home pageModel, activeRoute = Route.Home }, cmd )
+
+                    Just Route.Login ->
+                        ( { model | activePage = Login, activeRoute = Route.Login }, Ports.startAuthUI () )
+
+                    Just Route.Logout ->
+                        ( { model | activePage = Home HomePage.emptyModel, activeRoute = Route.Home }, Ports.logOut () )
+
+                    Just Route.Profile ->
+                        let
+                            persistentUserState =
+                                validateUser <| Just logedInUser
+
+                            profilePageModel =
+                                ProfilePage.init logedInUser persistentUserState
+                        in
+                            ( { model | activePage = (Profile profilePageModel), activeRoute = Route.Profile }, Cmd.none )
+
+                    Just Route.NewForm ->
+                        let
+                            ( newFormModel, newFormCmd ) =
+                                NewFormPage.init logedInUser device Nothing
+                        in
+                            ( { model | activePage = (NewForm newFormModel), activeRoute = Route.NewForm }, Cmd.map NewFormPageMsg newFormCmd )
+
+                    Just (Route.EditForm formId) ->
+                        let
+                            form =
+                                getListItem model.userForms formId
+
+                            ( newFormModel, newFormCmd ) =
+                                NewFormPage.init logedInUser device form
+                        in
+                            -- TODO om form är Nothing, visa felmeddelande!!
+                            ( { model | activePage = (NewForm newFormModel), activeRoute = (Route.EditForm formId) }, Cmd.map NewFormPageMsg newFormCmd )
 
 
 
@@ -537,9 +557,6 @@ pageToString page =
 
         NewForm model ->
             "Nytt formulär"
-
-        MyForms ->
-            "Mina formulär"
 
         Login ->
             "Logga in"
