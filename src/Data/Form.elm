@@ -136,6 +136,7 @@ encodeQuestion question =
     JE.object
         [ ( "questionText", JE.string question.questionText )
         , ( "questionType", encodeQuestionType question.questionType )
+        , ( "required", JE.bool question.required )
         ]
 
 

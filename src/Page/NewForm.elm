@@ -39,6 +39,7 @@ type MsgForParent
 type QuestionOperation
     = AddQuestion QuestionType ControlIndex
     | UpdateQuestionText QuestionIdx String
+    | UpdateQuestionRequired QuestionIdx Bool
     | MoveQuestionUp QuestionIdx
     | MoveQuestionDown QuestionIdx
     | RemoveQuestion QuestionIdx
@@ -206,6 +207,16 @@ updateQuestion oldQuestions qOperation oldControlHoverState =
                 let
                     updateQuestionText oldQuestion =
                         { oldQuestion | questionText = newText }
+
+                    newQuestions =
+                        Form.updateQuestion oldQuestions questionIdx updateQuestionText
+                in
+                    ( newQuestions, oldControlHoverState )
+
+            UpdateQuestionRequired questionIdx newValue ->
+                let
+                    updateQuestionText oldQuestion =
+                        { oldQuestion | required = newValue }
 
                     newQuestions =
                         Form.updateQuestion oldQuestions questionIdx updateQuestionText
@@ -463,7 +474,11 @@ questionView question questionIndex =
             ]
             [ Element.row [ height (px 25) ]
                 [ Element.column [ centerY ] [ Element.el [ alignLeft, centerY, Font.size 18 ] (Element.text labelText) ]
-                , Element.column [ width (px 100), alignRight, centerY, spacing 5 ] [ questionButtons questionIndex ]
+                , if questionType /= InfoType then
+                    Element.column [ width (px 100), alignRight, spacing 10 ] [ FormView.checkbox "Obligatorisk" (UpdateQuestionRequired questionIndex) question.required ]
+                  else
+                    Element.none
+                , Element.column [ width (px 100), alignRight, centerY, spacing 5 ] [ questionButtons question questionIndex ]
                 ]
             , Element.row [] [ questionContent ]
             ]
@@ -522,7 +537,7 @@ choiceQuestion question questionIdx choiceList =
                 question.questionText
                 (UpdateQuestionText questionIdx)
                 Enabled
-            , Element.row [] [ Element.el [ alignLeft ] (Element.text "Val") ]
+            , Element.row [] [ Element.el [ alignLeft, padding 5 ] (Element.text "Val") ]
             , Keyed.row
                 [ Background.color Color.white
                 , height (px elementHeight)
@@ -568,8 +583,8 @@ choiceView choice choiceIdx questionIdx =
         ]
 
 
-questionButtons : QuestionIdx -> Element QuestionOperation
-questionButtons questionIdx =
+questionButtons : Question -> QuestionIdx -> Element QuestionOperation
+questionButtons question questionIdx =
     Element.row
         [ centerX, centerY, padding 5, spacing 10 ]
         [ (iconButton FeatherIcons.arrowUp "Flytta upp" (MoveQuestionUp questionIdx))
